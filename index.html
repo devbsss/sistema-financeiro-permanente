@@ -38,6 +38,9 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   padding:14px 20px;
   display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
 }
+#statusSincronizacao{
+  font-size:12px;font-weight:600;letter-spacing:0.5px;min-height:16px;transition:all 0.3s;
+}
 .btn-mes{
   background:transparent;border:none;color:var(--muted);font-size:18px;
   cursor:pointer;padding:4px 8px;transition:color 0.2s;line-height:1;
@@ -204,12 +207,13 @@ canvas{max-width:100%;height:auto}
 <body>
 
 <div id="header">
-  <button class="btn-mes" id="btnMesAnterior">←</button>
-  <span id="labelMes">Janeiro 2026</span>
-  <button class="btn-mes" id="btnMesProximo">→</button>
-  <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
-  <button class="btn-icon" id="btnConfig">⚙️</button>
-</div>
+    <button class="btn-mes" id="btnMesAnterior">←</button>
+    <span id="labelMes"></span>
+    <button class="btn-mes" id="btnMesProximo">→</button>
+    <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
+    <button class="btn-config" id="btnConfig">⚙️</button>
+    <span id="statusSincronizacao"></span>
+  </div>
 
 <div class="grid-cards">
   <div class="card">
@@ -721,6 +725,7 @@ const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/contents/${G
 
 // Token armazenado de forma segura (não hardcoded)
 let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+let statusSincronizacao = 'pronto'; // pronto, salvando, erro, sincronizado
 
 async function sincronizarComGitHub() {
   try {
@@ -742,15 +747,25 @@ async function sincronizarComGitHub() {
   }
 }
 
-async function salvarNoGitHub() {
-  if(!GITHUB_TOKEN) return; // Não salva se não tiver token
+async function salvarNoGitHub(tentativa = 1) {
+  if(!GITHUB_TOKEN) {
+    console.log('Token não configurado - dados salvos localmente apenas');
+    return false;
+  }
+  
+  statusSincronizacao = 'salvando';
+  atualizarStatusSincronizacao();
+  
   try {
     // Buscar o SHA do arquivo atual (necessário para atualizar)
     const getResponse = await fetch(GITHUB_API_URL, {
-      headers: {'Authorization': `token ${GITHUB_TOKEN}`}
+      headers: {'Authorization': `token ${GITHUB_TOKEN}`},
+      method: 'GET'
     });
     
-    if(!getResponse.ok) throw new Error('Não conseguiu buscar arquivo');
+    if(!getResponse.ok) {
+      throw new Error(`Erro ao buscar arquivo: ${getResponse.status} ${getResponse.statusText}`);
+    }
     
     const fileData = await getResponse.json();
     const sha = fileData.sha;
@@ -770,7 +785,8 @@ async function salvarNoGitHub() {
       method: 'PUT',
       headers: {
         'Authorization': `token ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
       },
       body: JSON.stringify({
         message: `Atualização automática - ${new Date().toLocaleString('pt-BR')}`,
@@ -780,10 +796,44 @@ async function salvarNoGitHub() {
     });
     
     if(updateResponse.ok) {
-      console.log('Dados salvos no GitHub com sucesso!');
+      console.log('✅ Dados salvos no GitHub com sucesso!');
+      statusSincronizacao = 'sincronizado';
+      atualizarStatusSincronizacao();
+      setTimeout(() => { statusSincronizacao = 'pronto'; atualizarStatusSincronizacao(); }, 2000);
+      return true;
+    } else {
+      const erro = await updateResponse.json();
+      throw new Error(`Erro na atualização: ${erro.message || updateResponse.statusText}`);
     }
   } catch(err) {
-    console.log('Erro ao salvar no GitHub:', err.message);
+    console.error('❌ Erro ao salvar no GitHub:', err.message);
+    statusSincronizacao = 'erro';
+    atualizarStatusSincronizacao();
+    
+    // Retry automático (máximo 3 tentativas)
+    if(tentativa < 3) {
+      console.log(`Tentando novamente em 2 segundos (tentativa ${tentativa + 1}/3)...`);
+      setTimeout(() => salvarNoGitHub(tentativa + 1), 2000);
+    }
+    return false;
+  }
+}
+
+function atualizarStatusSincronizacao() {
+  const statusEl = document.getElementById('statusSincronizacao');
+  if(!statusEl) return;
+  
+  if(statusSincronizacao === 'salvando') {
+    statusEl.textContent = '💾 Salvando...';
+    statusEl.style.color = 'var(--yellow)';
+  } else if(statusSincronizacao === 'sincronizado') {
+    statusEl.textContent = '✅ Sincronizado';
+    statusEl.style.color = 'var(--green)';
+  } else if(statusSincronizacao === 'erro') {
+    statusEl.textContent = '⚠️ Erro';
+    statusEl.style.color = 'var(--red)';
+  } else {
+    statusEl.textContent = '';
   }
 }
 
