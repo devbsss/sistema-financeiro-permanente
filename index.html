@@ -375,7 +375,11 @@ canvas{max-width:100%;height:auto}
 </div>
 
 <script>
-const GITHUB_TOKEN = localStorage.getItem('ghToken') || prompt('Cole seu token GitHub:');
+let GITHUB_TOKEN = localStorage.getItem('ghToken');
+if (!GITHUB_TOKEN) {
+  GITHUB_TOKEN = prompt('Para ativar a sincronização automática, cole o token do GitHub aqui:');
+  if (GITHUB_TOKEN) localStorage.setItem('ghToken', GITHUB_TOKEN);
+}
 const GITHUB_OWNER = 'devbsss';
 const GITHUB_REPO = 'sistema-financeiro-permanente';
 const GITHUB_FILE = 'data.json';
