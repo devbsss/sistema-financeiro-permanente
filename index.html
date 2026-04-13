@@ -369,6 +369,16 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   // Sincronizar a cada 5 segundos para detectar mudanças de outras pessoas
   setInterval(sincronizarComGitHub, 5000);
+  
+  // Se não tiver token, pedir ao usuário
+  if(!GITHUB_TOKEN) {
+    const token = prompt('Cole o token do GitHub para habilitar sincronização automática:\n(Você só precisa fazer isso uma vez)');
+    if(token) {
+      GITHUB_TOKEN = token;
+      localStorage.setItem('github_token', token);
+      salvarNoGitHub();
+    }
+  }
 });
 
 function setupEventListeners() {
@@ -707,26 +717,80 @@ function formatarMoeda(valor) {
 const GITHUB_REPO = 'devbsss/sistema-financeiro-permanente';
 const GITHUB_FILE = 'data.json';
 const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/master/${GITHUB_FILE}`;
+const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+
+// Token armazenado de forma segura (não hardcoded)
+let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
 
 async function sincronizarComGitHub() {
   try {
     const response = await fetch(GITHUB_RAW_URL);
     if(response.ok) {
       const dados = await response.json();
-      lancamentos = dados.lancamentos || lancamentos;
-      socios = dados.socios || socios;
-      localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
-      localStorage.setItem('financeiro_socios', JSON.stringify(socios));
-      atualizarUI();
+      const versaoLocal = JSON.stringify({lancamentos, socios});
+      const versaoRemota = JSON.stringify(dados);
+      if(versaoLocal !== versaoRemota) {
+        lancamentos = dados.lancamentos || lancamentos;
+        socios = dados.socios || socios;
+        localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
+        localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+        atualizarUI();
+      }
     }
   } catch(err) {
     console.log('Sincronização com GitHub: usando dados locais');
   }
 }
 
+async function salvarNoGitHub() {
+  if(!GITHUB_TOKEN) return; // Não salva se não tiver token
+  try {
+    // Buscar o SHA do arquivo atual (necessário para atualizar)
+    const getResponse = await fetch(GITHUB_API_URL, {
+      headers: {'Authorization': `token ${GITHUB_TOKEN}`}
+    });
+    
+    if(!getResponse.ok) throw new Error('Não conseguiu buscar arquivo');
+    
+    const fileData = await getResponse.json();
+    const sha = fileData.sha;
+    
+    // Preparar os dados
+    const dados = {
+      lancamentos,
+      socios,
+      ultimaAtualizacao: new Date().toISOString()
+    };
+    
+    // Codificar em base64
+    const content = btoa(JSON.stringify(dados, null, 2));
+    
+    // Enviar para o GitHub
+    const updateResponse = await fetch(GITHUB_API_URL, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Atualização automática - ${new Date().toLocaleString('pt-BR')}`,
+        content: content,
+        sha: sha
+      })
+    });
+    
+    if(updateResponse.ok) {
+      console.log('Dados salvos no GitHub com sucesso!');
+    }
+  } catch(err) {
+    console.log('Erro ao salvar no GitHub:', err.message);
+  }
+}
+
 function salvarDados() {
   localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
   localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+  salvarNoGitHub(); // Sincronizar com GitHub
 }
 
 function carregarDados() {
