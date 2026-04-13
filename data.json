@@ -1,7 +1,7 @@
 {
   "lancamentos": [
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:00:27.755Z",
       "dataRetirada": "2026-03-14T05:10:59.812Z",
       "descricao": "Test de receita",
@@ -25,7 +25,7 @@
       "id": "-Onei-OGxiob4ZTUV2bS"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:09:15.120Z",
       "dataRetirada": "2026-03-14T05:10:58.464Z",
       "descricao": "ricooo",
@@ -37,7 +37,7 @@
       "id": "-OnejtofoZHIq6m8o1zR"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:12:21.197Z",
       "descricao": "Luane",
       "observacoes": "",
@@ -48,7 +48,7 @@
       "id": "-OnekbF8REDUE2elffgD"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:12:40.993Z",
       "descricao": "Ravyla",
       "observacoes": "",
@@ -59,7 +59,7 @@
       "id": "-Onekg4RuoDqYFJUYZmh"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:12:55.660Z",
       "descricao": "Aline",
       "observacoes": "",
@@ -70,7 +70,7 @@
       "id": "-OnekjebkoglhSdWPNUc"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:13:11.197Z",
       "descricao": "Neia",
       "observacoes": "",
@@ -92,7 +92,7 @@
       "id": "-OnekuJoegZmKbRzr10o"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:13:54.722Z",
       "descricao": "Jorciane",
       "observacoes": "",
@@ -103,7 +103,7 @@
       "id": "-Oneky4S7BteUpd13_DC"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:14:13.412Z",
       "descricao": "Joselaine",
       "observacoes": "",
@@ -114,7 +114,7 @@
       "id": "-Onel1dUyMY1CRO1B3op"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:14:30.552Z",
       "descricao": "Dmazia",
       "observacoes": "",
@@ -125,7 +125,7 @@
       "id": "-Onel5pIfvcguBfpWNxu"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:14:55.358Z",
       "descricao": "Vinicius",
       "observacoes": "",
@@ -136,7 +136,7 @@
       "id": "-OnelBstFlM1w4f0GLwY"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:15:12.135Z",
       "descricao": "Sabrina",
       "observacoes": "",
@@ -147,7 +147,7 @@
       "id": "-OnelFz1eQSVRETqZnKI"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:15:35.290Z",
       "descricao": "jociane",
       "observacoes": "",
@@ -158,9 +158,9 @@
       "id": "-OnelLcpozRzgByEKLhA"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:15:49.572Z",
-      "descricao": "La\u00eds",
+      "descricao": "Laís",
       "observacoes": "",
       "retirado": false,
       "socio": "Geral",
@@ -169,7 +169,7 @@
       "id": "-OnelP6zaDD89DI8Cn0e"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:16:10.499Z",
       "descricao": "Ciane",
       "observacoes": "",
@@ -191,7 +191,7 @@
       "id": "-Onel_vxrCswXfQBadEJ"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-14T05:17:06.117Z",
       "descricao": "Antonia",
       "observacoes": "",
@@ -202,7 +202,7 @@
       "id": "-Onelgo-CLaJfUR8ZTsK"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-16T20:12:51.823Z",
       "descricao": "Eduardo",
       "observacoes": "",
@@ -213,7 +213,7 @@
       "id": "-OnsGuYIlaDWu_mmHdML"
     },
     {
-      "categoria": "Venda de Produto/Servi\u00e7o",
+      "categoria": "Venda de Produto/Serviço",
       "criadoEm": "2026-03-16T20:13:14.357Z",
       "descricao": "Delran",
       "observacoes": "",
@@ -270,7 +270,7 @@
     {
       "categoria": "Fornecedores",
       "criadoEm": "2026-03-18T12:16:15.481Z",
-      "descricao": "Reposi\u00e7\u00e3o",
+      "descricao": "Reposição",
       "observacoes": "",
       "retirado": false,
       "socio": "Geral",
@@ -472,5 +472,5 @@
     "Geruza",
     "Lucas"
   ],
-  "ultimaAtualizacao": "2026-04-13T01:00:00Z"
+  "ultimaAtualizacao": "2026-04-13T05:21:52.078Z"
 }
