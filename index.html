@@ -710,8 +710,18 @@ function carregarDados() {
   const lacs = localStorage.getItem('financeiro_lancamentos');
   const socs = localStorage.getItem('financeiro_socios');
   
-  if(lacs) lancamentos = JSON.parse(lacs);
-  if(socs) socios = JSON.parse(socs);
+  // Se localStorage estiver vazio, mantém os dados migrados (já definidos no início)
+  // Se localStorage tiver dados, carrega deles (para não perder dados locais do usuário)
+  if(lacs && lacs !== '[]') lancamentos = JSON.parse(lacs);
+  if(socs && socs !== '["Sócio 1","Sócio 2","Sócio 3","Sócio 4"]') socios = JSON.parse(socs);
+  
+  // Se localStorage está vazio, salva os dados migrados para persistência
+  if(!lacs || lacs === '[]') {
+    localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
+  }
+  if(!socs || socs === '["Sócio 1","Sócio 2","Sócio 3","Sócio 4"]') {
+    localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+  }
 }
 </script>
 
