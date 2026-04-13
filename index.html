@@ -364,8 +364,11 @@ const categorias = {
 // INICIALIZAR
 document.addEventListener('DOMContentLoaded', () => {
   carregarDados();
+  sincronizarComGitHub(); // Sincronizar com GitHub ao carregar
   atualizarUI();
   setupEventListeners();
+  // Sincronizar a cada 5 segundos para detectar mudanças de outras pessoas
+  setInterval(sincronizarComGitHub, 5000);
 });
 
 function setupEventListeners() {
@@ -699,6 +702,26 @@ function confirmarApagar() {
 
 function formatarMoeda(valor) {
   return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(valor);
+}
+
+const GITHUB_REPO = 'devbsss/sistema-financeiro-permanente';
+const GITHUB_FILE = 'data.json';
+const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/master/${GITHUB_FILE}`;
+
+async function sincronizarComGitHub() {
+  try {
+    const response = await fetch(GITHUB_RAW_URL);
+    if(response.ok) {
+      const dados = await response.json();
+      lancamentos = dados.lancamentos || lancamentos;
+      socios = dados.socios || socios;
+      localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
+      localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+      atualizarUI();
+    }
+  } catch(err) {
+    console.log('Sincronização com GitHub: usando dados locais');
+  }
 }
 
 function salvarDados() {
