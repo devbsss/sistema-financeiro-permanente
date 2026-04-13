@@ -517,7 +517,7 @@ function atualizarMes() {
 
 function atualizarCards() {
   const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.data);
+    const d = new Date(l.criadoEm || l.data);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
   });
   
@@ -537,7 +537,7 @@ function atualizarGraficos() {
   const dadosMeses = [];
   for(let m = 0; m < 12; m++) {
     const lancsMes = lancamentos.filter(l => {
-      const d = new Date(l.data);
+      const d = new Date(l.criadoEm || l.data);
       return d.getMonth() === m && d.getFullYear() === anoAtual && !l.retirado;
     });
     const receitas = lancsMes.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
@@ -561,7 +561,7 @@ function atualizarGraficos() {
   
   // Gráfico donut despesas
   const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.data);
+    const d = new Date(l.criadoEm || l.data);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && l.tipo === 'despesa' && !l.retirado;
   });
   
@@ -587,7 +587,7 @@ function atualizarGraficos() {
 
 function atualizarExtrato() {
   const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.data);
+    const d = new Date(l.criadoEm || l.data);
     const matchMes = d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
     const matchTipo = filtroTipo === 'todos' || l.tipo === filtroTipo;
     const search = document.getElementById('searchBox').value.toLowerCase();
@@ -599,7 +599,7 @@ function atualizarExtrato() {
     <div class="lancamento-item" style="${l.retirado ? 'opacity:0.5' : ''}">
       <div class="lancamento-info">
         <div class="lancamento-desc">${l.descricao}</div>
-        <div class="lancamento-cat">${l.categoria} • ${socios[l.socioIdx]}</div>
+        <div class="lancamento-cat">${l.categoria} • ${l.socio || socios[l.socioIdx]}</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${formatarMoeda(l.valor)}</div>
@@ -614,7 +614,7 @@ function atualizarExtrato() {
 
 function atualizarSociosUI() {
   const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.data);
+    const d = new Date(l.criadoEm || l.data);
     return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
   });
   
@@ -672,8 +672,8 @@ function exportarDados() {
   const csv = 'data:text/csv;charset=utf-8,\uFEFF' + 
     'Data,Tipo,Categoria,Descrição,Valor,Sócio\n' +
     lancamentos.map(l => {
-      const d = new Date(l.data);
-      return `${d.toLocaleDateString('pt-BR')},${l.tipo},${l.categoria},"${l.descricao}",${l.valor},${socios[l.socioIdx]}`;
+      const d = new Date(l.criadoEm || l.data);
+      return `${d.toLocaleDateString('pt-BR')},${l.tipo},${l.categoria},"${l.descricao}",${l.valor},${l.socio || socios[l.socioIdx]}`;
     }).join('\n');
   
   const link = document.createElement('a');
