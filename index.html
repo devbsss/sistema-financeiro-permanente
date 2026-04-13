@@ -6,6 +6,9 @@
 <title>Gestão Financeira</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -25,11 +28,34 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:#222D3A;border-radius:2px}
-
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 @keyframes modalIn{from{opacity:0;transform:scale(0.94) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
 @keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* LOADING */
+#loadingScreen{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:var(--bg);z-index:999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+#loadingScreen.hidden{display:none}
+.loading-spinner{
+  width:40px;height:40px;border:3px solid var(--border);
+  border-top-color:var(--green);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-family:'Syne',sans-serif;font-size:14px;color:var(--muted)}
+
+/* STATUS SYNC */
+#statusSync{
+  font-size:11px;color:var(--muted);font-family:'Syne',sans-serif;
+  padding:3px 10px;border-radius:20px;border:1px solid var(--border);
+  transition:all 0.3s;
+}
+#statusSync.syncing{color:var(--yellow);border-color:var(--yellow)}
+#statusSync.synced{color:var(--green);border-color:var(--green)}
+#statusSync.error{color:var(--red);border-color:var(--red)}
 
 /* HEADER */
 #header{
@@ -39,52 +65,24 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   padding:14px 20px;
   display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
 }
-
-#statusSync{
-  font-size:12px;color:var(--muted);font-family:'Syne',sans-serif;
-  animation:fadeUp 0.3s ease;
-}
-#statusSync.syncing{color:var(--yellow)}
-#statusSync.synced{color:var(--green)}
-#statusSync.error{color:var(--red)}
-
-.btn-mes{
-  background:transparent;border:none;color:var(--muted);font-size:18px;
-  cursor:pointer;padding:4px 8px;transition:color 0.2s;line-height:1;
-}
+.btn-mes{background:transparent;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;transition:color 0.2s}
 .btn-mes:hover{color:var(--text)}
 #labelMes{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);min-width:120px;text-align:center}
-.btn-primary{
-  background:var(--green);color:#000;border:none;border-radius:50px;
-  padding:8px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;
-  cursor:pointer;transition:all 0.3s;white-space:nowrap;
-}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,212,170,0.35);background:#00F0C0}
-.btn-ghost{
-  background:transparent;border:1px solid var(--border);color:var(--text);
-  border-radius:50px;padding:8px 16px;font-family:'Syne',sans-serif;font-weight:600;font-size:14px;
-  cursor:pointer;transition:all 0.3s;
-}
+.btn-primary{background:var(--green);color:#000;border:none;border-radius:50px;padding:8px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all 0.3s;white-space:nowrap}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,212,170,0.35)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:50px;padding:8px 16px;font-family:'Syne',sans-serif;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.3s}
 .btn-ghost:hover{border-color:var(--green);color:var(--green)}
-.btn-icon{
-  background:transparent;border:1px solid var(--border);color:var(--text);
-  border-radius:50px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
-  font-size:16px;cursor:pointer;transition:all 0.3s;
-}
+.btn-icon{background:transparent;border:1px solid var(--border);color:var(--text);border-radius:50px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.3s}
 .btn-icon:hover{border-color:var(--green);color:var(--green)}
 
 /* CARDS */
 .grid-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px}
-.card{
-  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;
-  transition:all 0.3s;
-}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;transition:all 0.3s}
 .card:hover{border-color:rgba(255,255,255,0.10);transform:translateY(-1px)}
 .card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Syne',sans-serif}
 .card-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
 .card-value{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1;margin-bottom:4px}
-.card-sub{font-size:11px;color:var(--muted)}
 
 /* GRÁFICOS */
 .grid-charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}
@@ -95,21 +93,11 @@ canvas{max-width:100%;height:auto}
 /* EXTRATO */
 .extrato-container{padding:16px}
 .extrato-header{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.filter-btn{
-  background:transparent;border:1px solid var(--border);color:var(--muted);
-  border-radius:50px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all 0.2s;
-}
+.filter-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:50px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all 0.2s}
 .filter-btn.active{background:var(--green);color:#000;border-color:var(--green)}
-.search-box{
-  flex:1;min-width:200px;background:var(--input);border:1px solid var(--border);
-  border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;
-}
+.search-box{flex:1;min-width:200px;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px}
 .search-box::placeholder{color:var(--muted)}
-.lancamento-item{
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
-  animation:fadeUp 0.3s ease;
-}
+.lancamento-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;animation:fadeUp 0.3s ease}
 .lancamento-info{flex:1}
 .lancamento-nome{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text);margin-bottom:2px}
 .lancamento-meta{font-size:11px;color:var(--muted)}
@@ -118,163 +106,97 @@ canvas{max-width:100%;height:auto}
 .lancamento-valor.despesa{color:var(--red)}
 .lancamento-valor.investimento{color:var(--purple)}
 .lancamento-actions{display:flex;gap:4px}
-.lancamento-actions button{
-  background:transparent;border:1px solid var(--border);color:var(--text);
-  width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:12px;
-  transition:all 0.2s;
-}
+.lancamento-actions button{background:transparent;border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.2s}
 .lancamento-actions button:hover{border-color:var(--green);color:var(--green)}
 
 /* PARTICIPAÇÃO */
 .socio-container{padding:16px}
-.socio-item{
-  background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
-}
+.socio-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .socio-nome{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text)}
 .socio-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
 .socio-valor.positivo{color:var(--green)}
 .socio-valor.negativo{color:var(--red)}
 
 /* MODAL */
-.modal-overlay{
-  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,0.5);z-index:200;animation:fadeUp 0.2s ease;
-}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:200}
 .modal-overlay.active{display:block}
-.modal-content{
-  position:fixed;bottom:0;left:0;right:0;background:var(--card);
-  border-top:1px solid var(--border);border-radius:20px 20px 0 0;
-  padding:24px;max-height:90vh;overflow-y:auto;z-index:201;
-  animation:modalIn 0.3s ease;
-}
-.modal-header{
-  font-family:'Syne',sans-serif;font-weight:700;font-size:18px;
-  margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;
-}
-.modal-close{
-  background:transparent;border:none;color:var(--text);font-size:24px;
-  cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-}
+.modal-content{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px;max-height:90vh;overflow-y:auto;z-index:201;animation:modalIn 0.3s ease}
+.modal-header{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:transparent;border:none;color:var(--text);font-size:24px;cursor:pointer}
 .form-group{margin-bottom:16px}
-.form-label{
-  display:block;font-size:12px;color:var(--muted);margin-bottom:6px;
-  text-transform:uppercase;font-family:'Syne',sans-serif;
-}
-.form-input,.form-select{
-  width:100%;background:var(--input);border:1px solid var(--border);
-  border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;
-  font-family:'DM Sans',sans-serif;transition:border 0.2s;
-}
+.form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;font-family:'Syne',sans-serif}
+.form-input,.form-select{width:100%;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;transition:border 0.2s}
 .form-input:focus,.form-select:focus{outline:none;border-color:var(--green)}
 .form-input::placeholder{color:var(--muted)}
-.form-actions{
-  display:flex;gap:8px;margin-top:20px;
-}
+.form-actions{display:flex;gap:8px;margin-top:20px}
 .form-actions button{flex:1}
 
 /* DRAWER */
-.drawer-overlay{
-  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
-  background:rgba(0,0,0,0.5);z-index:300;
-}
+.drawer-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:300}
 .drawer-overlay.active{display:block}
-.drawer-content{
-  position:fixed;right:0;top:0;bottom:0;width:min(100%,400px);
-  background:var(--card);border-left:1px solid var(--border);
-  padding:20px;overflow-y:auto;z-index:301;animation:slideIn 0.3s ease;
-}
-@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
-.drawer-header{
-  font-family:'Syne',sans-serif;font-weight:700;font-size:18px;
-  margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;
-}
-.drawer-close{
-  background:transparent;border:none;color:var(--text);font-size:24px;
-  cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-}
+.drawer-content{position:fixed;right:-100%;top:0;bottom:0;width:min(100%,400px);background:var(--card);border-left:1px solid var(--border);padding:20px;overflow-y:auto;z-index:301;transition:right 0.3s ease}
+.drawer-content.open{right:0}
+.drawer-header{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.drawer-close{background:transparent;border:none;color:var(--text);font-size:24px;cursor:pointer}
 .drawer-section{margin-bottom:24px}
-.drawer-section-title{
-  font-family:'Syne',sans-serif;font-weight:700;font-size:13px;
-  color:var(--muted);text-transform:uppercase;margin-bottom:12px;
-}
-.drawer-input{
-  width:100%;background:var(--input);border:1px solid var(--border);
-  border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;
-  margin-bottom:8px;font-family:'DM Sans',sans-serif;
-}
+.drawer-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted);text-transform:uppercase;margin-bottom:12px}
+.drawer-input{width:100%;background:var(--input);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;margin-bottom:8px;font-family:'DM Sans',sans-serif}
 .drawer-input:focus{outline:none;border-color:var(--green)}
-.drawer-btn{
-  width:100%;background:transparent;border:1px solid var(--border);
-  color:var(--text);border-radius:8px;padding:10px;font-size:13px;
-  cursor:pointer;transition:all 0.2s;margin-bottom:8px;font-family:'Syne',sans-serif;
-}
+.drawer-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-size:13px;cursor:pointer;transition:all 0.2s;margin-bottom:8px;font-family:'Syne',sans-serif}
 .drawer-btn:hover{border-color:var(--green);color:var(--green)}
 .drawer-btn.danger{border-color:var(--red);color:var(--red)}
 .drawer-btn.danger:hover{background:rgba(255,77,106,0.1)}
 
-/* RESPONSIVE */
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 20px;font-size:13px;color:var(--text);z-index:500;animation:toastIn 0.3s ease;white-space:nowrap}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+
 @media(max-width:768px){
   .grid-cards,.grid-charts{grid-template-columns:1fr}
   .drawer-content{width:100%}
-  #header{flex-direction:column;gap:8px}
 }
-
-/* TOAST */
-.toast{
-  position:fixed;bottom:20px;right:20px;background:var(--card);
-  border:1px solid var(--border);border-radius:8px;padding:12px 16px;
-  font-size:13px;color:var(--text);z-index:400;animation:toastIn 0.3s ease;
-}
-.toast.success{border-color:var(--green);color:var(--green)}
-.toast.error{border-color:var(--red);color:var(--red)}
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
+<div id="loadingScreen">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Carregando dados...</div>
+</div>
+
 <div id="header">
   <button class="btn-mes" id="btnMesAnterior">←</button>
-  <span id="labelMes">Março 2026</span>
+  <span id="labelMes">Abril 2026</span>
   <button class="btn-mes" id="btnMesProximo">→</button>
   <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
   <button class="btn-icon" id="btnConfig">⚙️</button>
-  <span id="statusSync">Sincronizando...</span>
+  <span id="statusSync"></span>
 </div>
 
 <div class="grid-cards">
   <div class="card">
     <div class="card-header">
-      <div>
-        <div class="card-label">Receitas</div>
-        <div class="card-value" id="cardReceitas">$0.00</div>
-      </div>
+      <div><div class="card-label">Receitas</div><div class="card-value" id="cardReceitas">$0.00</div></div>
       <div class="card-icon" style="background:rgba(0,212,170,0.1);color:var(--green)">📈</div>
     </div>
   </div>
   <div class="card">
     <div class="card-header">
-      <div>
-        <div class="card-label">Despesas</div>
-        <div class="card-value" id="cardDespesas">$0.00</div>
-      </div>
+      <div><div class="card-label">Despesas</div><div class="card-value" id="cardDespesas">$0.00</div></div>
       <div class="card-icon" style="background:rgba(255,77,106,0.1);color:var(--red)">📉</div>
     </div>
   </div>
   <div class="card">
     <div class="card-header">
-      <div>
-        <div class="card-label">Investimentos</div>
-        <div class="card-value" id="cardInvestimentos">$0.00</div>
-      </div>
+      <div><div class="card-label">Investimentos</div><div class="card-value" id="cardInvestimentos">$0.00</div></div>
       <div class="card-icon" style="background:rgba(167,139,250,0.1);color:var(--purple)">💎</div>
     </div>
   </div>
   <div class="card">
     <div class="card-header">
-      <div>
-        <div class="card-label">Lucro Líquido</div>
-        <div class="card-value" id="cardLucro">$0.00</div>
-      </div>
+      <div><div class="card-label">Lucro Líquido</div><div class="card-value" id="cardLucro">$0.00</div></div>
       <div class="card-icon" style="background:rgba(255,180,0,0.1);color:var(--yellow)">💰</div>
     </div>
   </div>
@@ -294,20 +216,20 @@ canvas{max-width:100%;height:auto}
 <div class="extrato-container">
   <div class="extrato-header">
     <button class="filter-btn active" data-filter="todos">Todos</button>
-    <button class="filter-btn" data-filter="receitas">Receitas</button>
-    <button class="filter-btn" data-filter="despesas">Despesas</button>
-    <button class="filter-btn" data-filter="investimentos">Investimentos</button>
+    <button class="filter-btn" data-filter="receita">Receitas</button>
+    <button class="filter-btn" data-filter="despesa">Despesas</button>
+    <button class="filter-btn" data-filter="investimento">Investimentos</button>
     <input type="text" class="search-box" id="searchBox" placeholder="Buscar...">
   </div>
   <div id="extratoLista"></div>
 </div>
 
 <div class="socio-container">
-  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:12px;color:var(--text)">Participação dos Sócios</div>
+  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:12px">Participação dos Sócios</div>
   <div id="sociosList"></div>
 </div>
 
-<!-- MODAL NOVO LANÇAMENTO -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal-content">
     <div class="modal-header">
@@ -324,9 +246,7 @@ canvas{max-width:100%;height:auto}
     </div>
     <div class="form-group">
       <label class="form-label">Categoria</label>
-      <select class="form-select" id="inputCategoria">
-        <option>Venda de Produto/Serviço</option>
-      </select>
+      <select class="form-select" id="inputCategoria"></select>
     </div>
     <div class="form-group">
       <label class="form-label">Descrição</label>
@@ -338,12 +258,7 @@ canvas{max-width:100%;height:auto}
     </div>
     <div class="form-group">
       <label class="form-label">Sócio Responsável</label>
-      <select class="form-select" id="inputSocio">
-        <option value="0">Ana</option>
-        <option value="1">Luiz</option>
-        <option value="2">Geruza</option>
-        <option value="3">Lucas</option>
-      </select>
+      <select class="form-select" id="inputSocio"></select>
     </div>
     <div class="form-actions">
       <button class="btn-ghost" id="btnCancelar">Cancelar</button>
@@ -352,7 +267,7 @@ canvas{max-width:100%;height:auto}
   </div>
 </div>
 
-<!-- DRAWER CONFIGURAÇÕES -->
+<!-- DRAWER -->
 <div class="drawer-overlay" id="drawerOverlay"></div>
 <div class="drawer-content" id="drawerContent">
   <div class="drawer-header">
@@ -365,383 +280,305 @@ canvas{max-width:100%;height:auto}
     <input type="text" class="drawer-input" id="inputSocio1" placeholder="Sócio 2">
     <input type="text" class="drawer-input" id="inputSocio2" placeholder="Sócio 3">
     <input type="text" class="drawer-input" id="inputSocio3" placeholder="Sócio 4">
+    <button class="drawer-btn" id="btnSalvarSocios">💾 Salvar Nomes</button>
   </div>
   <div class="drawer-section">
     <div class="drawer-section-title">Ações</div>
     <button class="drawer-btn" id="btnExportar">📥 Exportar CSV</button>
-    <button class="drawer-btn" id="btnImportar">📤 Importar Dados</button>
     <button class="drawer-btn danger" id="btnLimpar">🗑️ Apagar Tudo</button>
   </div>
 </div>
 
 <script>
-let GITHUB_TOKEN = localStorage.getItem('ghToken');
-if (!GITHUB_TOKEN) {
-  GITHUB_TOKEN = prompt('Para ativar a sincronização automática, cole o token do GitHub aqui:');
-  if (GITHUB_TOKEN) localStorage.setItem('ghToken', GITHUB_TOKEN);
-}
-const GITHUB_OWNER = 'devbsss';
-const GITHUB_REPO = 'sistema-financeiro-permanente';
-const GITHUB_FILE = 'data.json';
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDummy-placeholder-key",
+  authDomain: "sistema-mamae.firebaseapp.com",
+  databaseURL: "https://sistema-mamae-default-rtdb.firebaseio.com",
+  projectId: "sistema-mamae",
+  storageBucket: "sistema-mamae.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:000000000000000000"
+};
 
-let mesAtual = 3; // Março (0-11)
-let anoAtual = 2026;
-let lancamentos = [];
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== ESTADO =====
+let mesAtual = new Date().getMonth();
+let anoAtual = new Date().getFullYear();
+let lancamentos = {};
 let socios = ['Ana', 'Luiz', 'Geruza', 'Lucas'];
 let filtroAtivo = 'todos';
 let chartBarras, chartDonut;
 
-// ===== SINCRONIZAÇÃO COM GITHUB =====
-async function carregarDoGitHub() {
+// ===== FIREBASE LISTENERS =====
+function iniciarSincronizacao() {
+  setStatus('Conectando...', 'syncing');
+
+  // Ouvir mudanças nos lançamentos em tempo real
+  db.ref('lancamentos').on('value', (snapshot) => {
+    lancamentos = snapshot.val() || {};
+    setStatus('Sincronizado ✓', 'synced');
+    setTimeout(() => setStatus('', ''), 2000);
+    document.getElementById('loadingScreen').classList.add('hidden');
+    atualizarUI();
+  }, (error) => {
+    console.error('Erro Firebase:', error);
+    setStatus('Erro de conexão', 'error');
+    document.getElementById('loadingScreen').classList.add('hidden');
+  });
+
+  // Ouvir mudanças nos sócios
+  db.ref('socios').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      socios = data;
+      atualizarSelectSocios();
+      atualizarSocios();
+      atualizarInputsSocios();
+    }
+  });
+}
+
+async function salvarLancamento(lancamento) {
+  setStatus('Salvando...', 'syncing');
   try {
-    atualizarStatus('Sincronizando...', 'syncing');
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3.raw'
-      }
-    });
-    
-    if (response.ok) {
-      const data = await response.json();
-      lancamentos = data.lancamentos || [];
-      socios = data.socios || ['Ana', 'Luiz', 'Geruza', 'Lucas'];
-      atualizarStatus('Sincronizado ✓', 'synced');
-      setTimeout(() => atualizarStatus('', ''), 2000);
-    } else {
-      // Se não encontrar o arquivo, usar dados locais
-      carregarDoLocal();
-      atualizarStatus('', '');
-    }
-  } catch (error) {
-    console.error('Erro ao carregar do GitHub:', error);
-    carregarDoLocal();
-    atualizarStatus('Modo offline', 'error');
+    await db.ref('lancamentos/' + lancamento.id).set(lancamento);
+    mostrarToast('Lançamento salvo!', 'success');
+  } catch (e) {
+    console.error(e);
+    setStatus('Erro ao salvar', 'error');
+    mostrarToast('Erro ao salvar. Tente novamente.', 'error');
   }
-  atualizarUI();
 }
 
-async function salvarNoGitHub() {
+async function excluirLancamento(id) {
+  if (!confirm('Excluir este lançamento?')) return;
+  setStatus('Salvando...', 'syncing');
   try {
-    atualizarStatus('Salvando...', 'syncing');
-    const data = {
-      lancamentos: lancamentos,
-      socios: socios,
-      ultimaAtualizacao: new Date().toISOString()
-    };
-    
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
-    
-    // Primeiro, obter o SHA do arquivo atual
-    let sha = null;
-    try {
-      const getResponse = await fetch(url, {
-        headers: {
-          'Authorization': `token ${GITHUB_TOKEN}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-      if (getResponse.ok) {
-        const fileData = await getResponse.json();
-        sha = fileData.sha;
-      }
-    } catch (e) {
-      console.log('Arquivo não existe ainda, será criado');
-    }
-    
-    // Agora, fazer o PUT para atualizar ou criar o arquivo
-    const putResponse = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `Atualização automática - ${new Date().toLocaleString('pt-BR')}`,
-        content: btoa(JSON.stringify(data, null, 2)),
-        sha: sha
-      })
-    });
-    
-    if (putResponse.ok) {
-      atualizarStatus('Sincronizado ✓', 'synced');
-      setTimeout(() => atualizarStatus('', ''), 2000);
-      mostrarToast('Dados salvos com sucesso!', 'success');
-    } else {
-      throw new Error('Erro ao salvar no GitHub');
-    }
-  } catch (error) {
-    console.error('Erro ao salvar no GitHub:', error);
-    atualizarStatus('Erro ao sincronizar', 'error');
-    mostrarToast('Erro ao sincronizar. Dados salvos localmente.', 'error');
-    salvarNoLocal();
+    await db.ref('lancamentos/' + id).remove();
+    mostrarToast('Excluído!', 'success');
+  } catch (e) {
+    mostrarToast('Erro ao excluir', 'error');
   }
 }
 
-function carregarDoLocal() {
-  const dados = localStorage.getItem('sistemaMamae');
-  if (dados) {
-    const parsed = JSON.parse(dados);
-    lancamentos = parsed.lancamentos || [];
-    socios = parsed.socios || ['Ana', 'Luiz', 'Geruza', 'Lucas'];
+async function retirarLancamento(id) {
+  const l = lancamentos[id];
+  if (!l) return;
+  setStatus('Salvando...', 'syncing');
+  try {
+    await db.ref('lancamentos/' + id + '/retirado').set(!l.retirado);
+  } catch (e) {
+    mostrarToast('Erro ao atualizar', 'error');
   }
 }
 
-function salvarNoLocal() {
-  localStorage.setItem('sistemaMamae', JSON.stringify({
-    lancamentos: lancamentos,
-    socios: socios
-  }));
+async function salvarSocios() {
+  setStatus('Salvando...', 'syncing');
+  try {
+    await db.ref('socios').set(socios);
+    mostrarToast('Nomes salvos!', 'success');
+  } catch (e) {
+    mostrarToast('Erro ao salvar nomes', 'error');
+  }
 }
 
-function atualizarStatus(texto, classe) {
+// ===== UI =====
+function setStatus(texto, classe) {
   const el = document.getElementById('statusSync');
   el.textContent = texto;
   el.className = classe;
 }
 
-// ===== INTERFACE =====
 function atualizarUI() {
   atualizarCards();
   atualizarGraficos();
   atualizarExtrato();
   atualizarSocios();
-  atualizarCategorias();
+}
+
+function getLancamentosArray() {
+  return Object.values(lancamentos);
 }
 
 function atualizarCards() {
-  const lancamentosMes = lancamentos.filter(l => {
-    const data = new Date(l.criadoEm);
-    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
+  const lista = getLancamentosArray().filter(l => {
+    const d = new Date(l.criadoEm);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
   });
-  
-  const receitas = lancamentosMes.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
-  const despesas = lancamentosMes.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
-  const investimentos = lancamentosMes.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
-  
-  document.getElementById('cardReceitas').textContent = formatarMoeda(receitas);
-  document.getElementById('cardDespesas').textContent = formatarMoeda(despesas);
-  document.getElementById('cardInvestimentos').textContent = formatarMoeda(investimentos);
-  document.getElementById('cardLucro').textContent = formatarMoeda(receitas - despesas - investimentos);
+  const receitas = lista.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
+  const despesas = lista.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
+  const invest = lista.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
+  document.getElementById('cardReceitas').textContent = fmt(receitas);
+  document.getElementById('cardDespesas').textContent = fmt(despesas);
+  document.getElementById('cardInvestimentos').textContent = fmt(invest);
+  document.getElementById('cardLucro').textContent = fmt(receitas - despesas - invest);
 }
 
 function atualizarGraficos() {
-  // Gráfico de Barras
-  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-  const receitas = meses.map((_, i) => {
-    const lancamentosMes = lancamentos.filter(l => {
-      const data = new Date(l.criadoEm);
-      return data.getMonth() === i && data.getFullYear() === anoAtual && l.tipo === 'receita';
-    });
-    return lancamentosMes.reduce((s, l) => s + l.valor, 0);
-  });
-  
-  const ctxBarras = document.getElementById('chartBarras').getContext('2d');
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const receitas = meses.map((_, i) =>
+    getLancamentosArray().filter(l => {
+      const d = new Date(l.criadoEm);
+      return d.getMonth() === i && d.getFullYear() === anoAtual && l.tipo === 'receita' && !l.retirado;
+    }).reduce((s, l) => s + l.valor, 0)
+  );
+
+  const ctxB = document.getElementById('chartBarras').getContext('2d');
   if (chartBarras) chartBarras.destroy();
-  chartBarras = new Chart(ctxBarras, {
+  chartBarras = new Chart(ctxB, {
     type: 'bar',
-    data: {
-      labels: meses,
-      datasets: [{
-        label: 'Receitas',
-        data: receitas,
-        backgroundColor: 'rgba(0, 212, 170, 0.8)',
-        borderRadius: 4,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { color: '#6B8098' }, grid: { color: 'rgba(255,255,255,0.06)' } },
-        x: { ticks: { color: '#6B8098' }, grid: { display: false } }
-      }
-    }
+    data: { labels: meses, datasets: [{ label: 'Receitas', data: receitas, backgroundColor: 'rgba(0,212,170,0.8)', borderRadius: 4, borderSkipped: false }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { color: '#6B8098' }, grid: { color: 'rgba(255,255,255,0.06)' } }, x: { ticks: { color: '#6B8098' }, grid: { display: false } } } }
   });
-  
-  // Gráfico Donut
-  const lancamentosMes = lancamentos.filter(l => {
-    const data = new Date(l.criadoEm);
-    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && l.tipo === 'despesa';
+
+  const despMes = getLancamentosArray().filter(l => {
+    const d = new Date(l.criadoEm);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && l.tipo === 'despesa' && !l.retirado;
   });
-  
-  const categorias = {};
-  lancamentosMes.forEach(l => {
-    categorias[l.categoria] = (categorias[l.categoria] || 0) + l.valor;
-  });
-  
-  const ctxDonut = document.getElementById('chartDonut').getContext('2d');
+  const cats = {};
+  despMes.forEach(l => { cats[l.categoria] = (cats[l.categoria] || 0) + l.valor; });
+
+  const ctxD = document.getElementById('chartDonut').getContext('2d');
   if (chartDonut) chartDonut.destroy();
-  chartDonut = new Chart(ctxDonut, {
+  chartDonut = new Chart(ctxD, {
     type: 'doughnut',
-    data: {
-      labels: Object.keys(categorias),
-      datasets: [{
-        data: Object.values(categorias),
-        backgroundColor: ['#00D4AA', '#FF4D6A', '#A78BFA', '#FFB400', '#FF6B9D'],
-        borderColor: '#0D1118',
-        borderWidth: 2
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#E4EAF0' } } } }
+    data: { labels: Object.keys(cats), datasets: [{ data: Object.values(cats), backgroundColor: ['#00D4AA','#FF4D6A','#A78BFA','#FFB400','#FF6B9D'], borderColor: '#0D1118', borderWidth: 2 }] },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#E4EAF0', font: { size: 11 } } } } }
   });
 }
 
 function atualizarExtrato() {
-  const lancamentosMes = lancamentos.filter(l => {
-    const data = new Date(l.criadoEm);
-    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && !l.retirado;
+  let lista = getLancamentosArray().filter(l => {
+    const d = new Date(l.criadoEm);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
   });
-  
-  let filtrados = lancamentosMes;
-  if (filtroAtivo !== 'todos') {
-    filtrados = lancamentosMes.filter(l => l.tipo === filtroAtivo);
-  }
-  
+  if (filtroAtivo !== 'todos') lista = lista.filter(l => l.tipo === filtroAtivo);
   const busca = document.getElementById('searchBox').value.toLowerCase();
-  if (busca) {
-    filtrados = filtrados.filter(l => l.descricao.toLowerCase().includes(busca));
-  }
-  
-  const html = filtrados.map(l => `
+  if (busca) lista = lista.filter(l => l.descricao.toLowerCase().includes(busca));
+
+  lista.sort((a, b) => new Date(b.criadoEm) - new Date(a.criadoEm));
+
+  const html = lista.map(l => `
     <div class="lancamento-item">
       <div class="lancamento-info">
         <div class="lancamento-nome">${l.descricao}</div>
-        <div class="lancamento-meta">${socios[l.socioIdx]} • ${l.categoria}</div>
+        <div class="lancamento-meta">${socios[l.socioIdx] || 'Sócio'} • ${l.categoria}</div>
       </div>
-      <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${formatarMoeda(l.valor)}</div>
+      <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${fmt(l.valor)}</div>
       <div class="lancamento-actions">
-        <button onclick="retirarLancamento('${l.id}')">✓</button>
-        <button onclick="excluirLancamento('${l.id}')">🗑️</button>
+        <button onclick="retirarLancamento('${l.id}')" title="Retirar">✓</button>
+        <button onclick="excluirLancamento('${l.id}')" title="Excluir">🗑️</button>
       </div>
     </div>
   `).join('');
-  
-  document.getElementById('extratoLista').innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:20px">Nenhum lançamento</div>';
+  document.getElementById('extratoLista').innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:24px">Nenhum lançamento neste mês</div>';
 }
 
 function atualizarSocios() {
-  const sociosData = socios.map((nome, idx) => {
-    const lancamentosSocio = lancamentos.filter(l => l.socioIdx === idx && !l.retirado);
-    const receitas = lancamentosSocio.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
-    const despesas = lancamentosSocio.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
-    const investimentos = lancamentosSocio.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
-    const saldo = receitas - despesas - investimentos;
-    return { nome, saldo };
-  });
-  
-  const html = sociosData.map(s => `
-    <div class="socio-item">
-      <div class="socio-nome">${s.nome}</div>
-      <div class="socio-valor ${s.saldo >= 0 ? 'positivo' : 'negativo'}">${formatarMoeda(s.saldo)}</div>
-    </div>
-  `).join('');
-  
+  const html = socios.map((nome, idx) => {
+    const lista = getLancamentosArray().filter(l => l.socioIdx === idx && !l.retirado);
+    const rec = lista.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
+    const desp = lista.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
+    const inv = lista.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
+    const saldo = rec - desp - inv;
+    return `<div class="socio-item"><div class="socio-nome">${nome}</div><div class="socio-valor ${saldo >= 0 ? 'positivo' : 'negativo'}">${fmt(saldo)}</div></div>`;
+  }).join('');
   document.getElementById('sociosList').innerHTML = html;
+}
+
+function atualizarSelectSocios() {
+  const sel = document.getElementById('inputSocio');
+  sel.innerHTML = socios.map((n, i) => `<option value="${i}">${n}</option>`).join('');
+}
+
+function atualizarInputsSocios() {
+  socios.forEach((n, i) => {
+    const el = document.getElementById('inputSocio' + i);
+    if (el) el.value = n;
+  });
 }
 
 function atualizarCategorias() {
   const tipo = document.getElementById('inputTipo').value;
-  const categorias = {
-    receita: ['Venda de Produto/Serviço', 'Consultoria', 'Outro'],
-    despesa: ['Fornecedores', 'Salários', 'Aluguel', 'Utilidades', 'Outro'],
+  const cats = {
+    receita: ['Venda de Produto/Serviço', 'Consultoria', 'Comissão', 'Outro'],
+    despesa: ['Fornecedores', 'Salários', 'Aluguel', 'Utilidades', 'Marketing', 'Outro'],
     investimento: ['Equipamentos', 'Tecnologia', 'Treinamento', 'Outro']
   };
-  
-  const select = document.getElementById('inputCategoria');
-  select.innerHTML = categorias[tipo].map(c => `<option>${c}</option>`).join('');
+  document.getElementById('inputCategoria').innerHTML = cats[tipo].map(c => `<option>${c}</option>`).join('');
 }
 
-function formatarMoeda(valor) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(valor);
+function atualizarLabelMes() {
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  document.getElementById('labelMes').textContent = `${meses[mesAtual]} ${anoAtual}`;
 }
 
-function formatarValor(str) {
+function fmt(v) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v || 0);
+}
+
+function fmtInput(str) {
   const num = parseFloat(str.replace(/[^\d.]/g, '')) || 0;
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 }
 
 function mostrarToast(msg, tipo) {
-  const toast = document.createElement('div');
-  toast.className = `toast ${tipo}`;
-  toast.textContent = msg;
-  document.body.appendChild(toast);
-  setTimeout(() => toast.remove(), 3000);
+  const t = document.createElement('div');
+  t.className = `toast ${tipo}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
 }
 
 // ===== EVENTOS =====
 document.getElementById('btnMesAnterior').addEventListener('click', () => {
-  mesAtual = (mesAtual - 1 + 12) % 12;
-  if (mesAtual === 11) anoAtual--;
-  atualizarLabelMes();
-  atualizarUI();
+  mesAtual--;
+  if (mesAtual < 0) { mesAtual = 11; anoAtual--; }
+  atualizarLabelMes(); atualizarUI();
 });
-
 document.getElementById('btnMesProximo').addEventListener('click', () => {
-  mesAtual = (mesAtual + 1) % 12;
-  if (mesAtual === 0) anoAtual++;
-  atualizarLabelMes();
-  atualizarUI();
+  mesAtual++;
+  if (mesAtual > 11) { mesAtual = 0; anoAtual++; }
+  atualizarLabelMes(); atualizarUI();
 });
-
-function atualizarLabelMes() {
-  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  document.getElementById('labelMes').textContent = `${meses[mesAtual]} ${anoAtual}`;
-}
 
 document.getElementById('btnNovoLancamento').addEventListener('click', () => {
+  atualizarCategorias();
+  atualizarSelectSocios();
   document.getElementById('modalOverlay').classList.add('active');
 });
-
-document.getElementById('btnCloseModal').addEventListener('click', () => {
-  document.getElementById('modalOverlay').classList.remove('active');
-});
-
-document.getElementById('modalOverlay').addEventListener('click', (e) => {
-  if (e.target === document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').classList.remove('active');
-  }
-});
-
+document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('active'));
+document.getElementById('btnCancelar').addEventListener('click', () => document.getElementById('modalOverlay').classList.remove('active'));
+document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('modalOverlay')) document.getElementById('modalOverlay').classList.remove('active'); });
 document.getElementById('inputTipo').addEventListener('change', atualizarCategorias);
+document.getElementById('inputValor').addEventListener('input', e => { e.target.value = fmtInput(e.target.value); });
 
 document.getElementById('btnSalvar').addEventListener('click', async () => {
   const tipo = document.getElementById('inputTipo').value;
   const categoria = document.getElementById('inputCategoria').value;
-  const descricao = document.getElementById('inputDescricao').value;
+  const descricao = document.getElementById('inputDescricao').value.trim();
   const valor = parseFloat(document.getElementById('inputValor').value.replace(/[^\d.]/g, '')) || 0;
   const socioIdx = parseInt(document.getElementById('inputSocio').value);
-  
+
   if (!descricao || valor <= 0) {
-    mostrarToast('Preencha todos os campos corretamente', 'error');
+    mostrarToast('Preencha todos os campos!', 'error');
     return;
   }
-  
-  lancamentos.push({
+
+  const lancamento = {
     id: Date.now().toString(),
     tipo, categoria, descricao, valor, socioIdx,
     criadoEm: new Date().toISOString(),
     retirado: false
-  });
-  
-  salvarNoLocal();
-  await salvarNoGitHub();
-  
+  };
+
   document.getElementById('modalOverlay').classList.remove('active');
   document.getElementById('inputDescricao').value = '';
   document.getElementById('inputValor').value = '';
-  atualizarUI();
-});
-
-document.getElementById('btnCancelar').addEventListener('click', () => {
-  document.getElementById('modalOverlay').classList.remove('active');
-});
-
-document.getElementById('inputValor').addEventListener('input', (e) => {
-  e.target.value = formatarValor(e.target.value);
+  await salvarLancamento(lancamento);
 });
 
 document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -752,110 +589,58 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
     atualizarExtrato();
   });
 });
-
 document.getElementById('searchBox').addEventListener('input', atualizarExtrato);
 
 document.getElementById('btnConfig').addEventListener('click', () => {
+  atualizarInputsSocios();
   document.getElementById('drawerOverlay').classList.add('active');
-  document.getElementById('drawerContent').style.display = 'block';
+  document.getElementById('drawerContent').classList.add('open');
 });
-
 document.getElementById('btnCloseDrawer').addEventListener('click', () => {
   document.getElementById('drawerOverlay').classList.remove('active');
-  document.getElementById('drawerContent').style.display = 'none';
+  document.getElementById('drawerContent').classList.remove('open');
 });
-
 document.getElementById('drawerOverlay').addEventListener('click', () => {
   document.getElementById('drawerOverlay').classList.remove('active');
-  document.getElementById('drawerContent').style.display = 'none';
+  document.getElementById('drawerContent').classList.remove('open');
 });
 
-['inputSocio0', 'inputSocio1', 'inputSocio2', 'inputSocio3'].forEach((id, idx) => {
-  const input = document.getElementById(id);
-  input.value = socios[idx];
-  input.addEventListener('change', async () => {
-    socios[idx] = input.value;
-    salvarNoLocal();
-    await salvarNoGitHub();
-    atualizarUI();
-  });
+document.getElementById('btnSalvarSocios').addEventListener('click', async () => {
+  socios = [0, 1, 2, 3].map(i => document.getElementById('inputSocio' + i).value.trim() || socios[i]);
+  await salvarSocios();
 });
 
 document.getElementById('btnExportar').addEventListener('click', () => {
-  const csv = 'Descrição,Tipo,Categoria,Valor,Sócio,Data\n' +
-    lancamentos.map(l => `"${l.descricao}","${l.tipo}","${l.categoria}",${l.valor},"${socios[l.socioIdx]}","${new Date(l.criadoEm).toLocaleDateString('pt-BR')}"`).join('\n');
-  
+  const lista = getLancamentosArray();
+  const csv = '\uFEFFDescrição,Tipo,Categoria,Valor,Sócio,Data\n' +
+    lista.map(l => `"${l.descricao}","${l.tipo}","${l.categoria}",${l.valor},"${socios[l.socioIdx] || ''}","${new Date(l.criadoEm).toLocaleDateString('pt-BR')}"`).join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'lancamentos.csv';
-  link.click();
-  mostrarToast('Arquivo exportado!', 'success');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lancamentos.csv';
+  a.click();
+  mostrarToast('Exportado!', 'success');
 });
 
-document.getElementById('btnImportar').addEventListener('click', () => {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        lancamentos = data.lancamentos || [];
-        socios = data.socios || socios;
-        salvarNoLocal();
-        await salvarNoGitHub();
-        atualizarUI();
-        mostrarToast('Dados importados!', 'success');
-      } catch (err) {
-        mostrarToast('Erro ao importar', 'error');
-      }
-    };
-    reader.readAsText(file);
-  });
-  input.click();
-});
-
-document.getElementById('btnLimpar').addEventListener('click', () => {
-  if (confirm('Tem certeza? Isso vai apagar TODOS os dados!')) {
-    lancamentos = [];
-    salvarNoLocal();
-    salvarNoGitHub();
-    atualizarUI();
-    mostrarToast('Todos os dados foram apagados', 'success');
+document.getElementById('btnLimpar').addEventListener('click', async () => {
+  if (confirm('Tem certeza? Isso vai apagar TODOS os dados para TODOS os usuários!')) {
+    setStatus('Apagando...', 'syncing');
+    try {
+      await db.ref('lancamentos').remove();
+      mostrarToast('Todos os dados foram apagados', 'success');
+    } catch (e) {
+      mostrarToast('Erro ao apagar', 'error');
+    }
   }
 });
-
-function retirarLancamento(id) {
-  const l = lancamentos.find(x => x.id === id);
-  if (l) {
-    l.retirado = !l.retirado;
-    salvarNoLocal();
-    salvarNoGitHub();
-    atualizarUI();
-  }
-}
-
-function excluirLancamento(id) {
-  if (confirm('Excluir este lançamento?')) {
-    lancamentos = lancamentos.filter(l => l.id !== id);
-    salvarNoLocal();
-    salvarNoGitHub();
-    atualizarUI();
-  }
-}
 
 // ===== INICIALIZAÇÃO =====
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   atualizarLabelMes();
-  await carregarDoGitHub();
-  
-  // Sincronizar a cada 30 segundos
-  setInterval(carregarDoGitHub, 30000);
+  atualizarCategorias();
+  atualizarSelectSocios();
+  iniciarSincronizacao();
 });
 </script>
-
 </body>
 </html>
