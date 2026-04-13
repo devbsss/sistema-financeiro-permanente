@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão Financeira</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090C;
+  --card:#0D1118;
+  --input:#121820;
+  --border:rgba(255,255,255,0.06);
+  --text:#E4EAF0;
+  --muted:#6B8098;
+  --green:#00D4AA;
+  --red:#FF4D6A;
+  --yellow:#FFB400;
+  --purple:#A78BFA;
+}
+html{font-size:16px}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#222D3A;border-radius:2px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes modalIn{from{opacity:0;transform:scale(0.94) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* HEADER */
+#header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,9,12,0.92);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:14px 20px;
+  display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+}
+.btn-mes{
+  background:transparent;border:none;color:var(--muted);font-size:18px;
+  cursor:pointer;padding:4px 8px;transition:color 0.2s;line-height:1;
+}
+.btn-mes:hover{color:var(--text)}
+#labelMes{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);min-width:120px;text-align:center}
+.btn-primary{
+  background:var(--green);color:#000;border:none;border-radius:50px;
+  padding:8px 20px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;
+  cursor:pointer;transition:all 0.3s;white-space:nowrap;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,212,170,0.35);background:#00F0C0}
+.btn-ghost{
+  background:transparent;border:1px solid var(--border);color:var(--text);
+  border-radius:50px;padding:8px 16px;font-family:'Syne',sans-serif;font-weight:600;font-size:14px;
+  cursor:pointer;transition:all 0.3s;
+}
+.btn-ghost:hover{border-color:var(--green);color:var(--green)}
+.btn-icon{
+  background:transparent;border:1px solid var(--border);color:var(--text);
+  border-radius:50px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;cursor:pointer;transition:all 0.3s;
+}
+.btn-icon:hover{border-color:var(--green);color:var(--green)}
+
+/* CARDS */
+.grid-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px}
+.card{
+  background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;
+  transition:all 0.3s;
+}
+.card:hover{border-color:rgba(255,255,255,0.10);transform:translateY(-1px)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;font-family:'Syne',sans-serif}
+.card-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.card-value{font-family:'Syne',sans-serif;font-weight:800;font-size:22px;line-height:1;margin-bottom:4px}
+.card-sub{font-size:11px;color:var(--muted)}
+
+/* GRÁFICOS */
+.grid-charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 16px}
+.chart-container{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px}
+.chart-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;margin-bottom:12px;color:var(--text)}
+canvas{max-width:100%;height:auto}
+
+/* EXTRATO */
+.extrato-container{padding:16px}
+.extrato-header{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.filter-btn{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  border-radius:50px;padding:6px 12px;font-size:12px;cursor:pointer;transition:all 0.2s;
+}
+.filter-btn.active{background:var(--green);color:#000;border-color:var(--green)}
+.search-box{
+  flex:1;min-width:200px;background:var(--input);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;
+}
+.search-box::placeholder{color:var(--muted)}
+.lancamento-item{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
+  transition:all 0.2s;
+}
+.lancamento-item:hover{border-color:rgba(255,255,255,0.10)}
+.lancamento-info{flex:1}
+.lancamento-desc{font-size:13px;color:var(--text);font-weight:500;margin-bottom:2px}
+.lancamento-cat{font-size:11px;color:var(--muted)}
+.lancamento-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.lancamento-valor.receita{color:var(--green)}
+.lancamento-valor.despesa{color:var(--red)}
+.lancamento-valor.investimento{color:var(--purple)}
+.lancamento-actions{display:flex;gap:6px}
+.btn-action{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:all 0.2s;
+}
+.btn-action:hover{border-color:var(--red);color:var(--red)}
+
+/* SÓCIOS */
+.socios-container{padding:16px}
+.socio-card{
+  background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:12px;margin-bottom:8px;
+}
+.socio-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.socio-nome{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)}
+.socio-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.socio-valor.positivo{color:var(--green)}
+.socio-valor.negativo{color:var(--red)}
+.socio-bar{
+  background:var(--input);border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;
+}
+.socio-bar-fill{height:100%;background:var(--green);transition:width 0.3s}
+.socio-bar-fill.negativo{background:var(--red)}
+
+/* MODAL */
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+  z-index:1000;align-items:center;justify-content:center;
+}
+.modal-overlay.ativo{display:flex}
+.modal-content{
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  padding:24px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;
+  animation:modalIn 0.3s;
+}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--text)}
+.btn-close{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.btn-close:hover{color:var(--text)}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.form-input,.form-select{
+  width:100%;background:var(--input);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;
+  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px rgba(0,212,170,0.1)}
+.form-input::placeholder{color:var(--muted)}
+.form-buttons{display:flex;gap:8px;margin-top:20px}
+.form-buttons button{flex:1;padding:10px;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-family:'Syne',sans-serif}
+.btn-submit{background:var(--green);color:#000}
+.btn-submit:hover{background:#00F0C0}
+.btn-cancel{background:var(--input);color:var(--text);border:1px solid var(--border)}
+.btn-cancel:hover{border-color:var(--green);color:var(--green)}
+
+/* DRAWER */
+.drawer{
+  position:fixed;right:-100%;top:0;width:100%;max-width:400px;height:100vh;
+  background:var(--card);border-left:1px solid var(--border);z-index:999;
+  transition:right 0.3s;overflow-y:auto;
+}
+.drawer.ativo{right:0}
+.drawer-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.drawer-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text)}
+.drawer-content{padding:16px}
+.drawer-section{margin-bottom:20px}
+.drawer-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.drawer-input{
+  width:100%;background:var(--input);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;
+  margin-bottom:8px;
+}
+.drawer-btn{
+  width:100%;padding:10px;border-radius:8px;border:none;font-weight:600;cursor:pointer;
+  margin-bottom:8px;font-family:'Syne',sans-serif;font-size:13px;
+  transition:all 0.2s;
+}
+.drawer-btn-primary{background:var(--green);color:#000}
+.drawer-btn-primary:hover{background:#00F0C0}
+.drawer-btn-secondary{background:var(--input);color:var(--text);border:1px solid var(--border)}
+.drawer-btn-secondary:hover{border-color:var(--green);color:var(--green)}
+.drawer-btn-danger{background:rgba(255,77,106,0.1);color:var(--red);border:1px solid rgba(255,77,106,0.3)}
+.drawer-btn-danger:hover{background:rgba(255,77,106,0.2)}
+
+/* RESPONSIVO */
+@media(max-width:768px){
+  .grid-cards{grid-template-columns:1fr}
+  .grid-charts{grid-template-columns:1fr}
+  .drawer{max-width:100%}
+  .modal-content{width:95%}
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <button class="btn-mes" id="btnMesAnterior">←</button>
+  <span id="labelMes">Janeiro 2026</span>
+  <button class="btn-mes" id="btnMesProximo">→</button>
+  <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
+  <button class="btn-icon" id="btnConfig">⚙️</button>
+</div>
+
+<div class="grid-cards">
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-label">Receitas</div>
+        <div class="card-value" id="cardReceitas">$0.00</div>
+      </div>
+      <div class="card-icon" style="background:rgba(0,212,170,0.1);color:var(--green)">📈</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-label">Despesas</div>
+        <div class="card-value" id="cardDespesas">$0.00</div>
+      </div>
+      <div class="card-icon" style="background:rgba(255,77,106,0.1);color:var(--red)">📉</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-label">Investimentos</div>
+        <div class="card-value" id="cardInvestimentos">$0.00</div>
+      </div>
+      <div class="card-icon" style="background:rgba(167,139,250,0.1);color:var(--purple)">💎</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-label">Lucro Líquido</div>
+        <div class="card-value" id="cardLucro">$0.00</div>
+      </div>
+      <div class="card-icon" style="background:rgba(255,180,0,0.1);color:var(--yellow)">💰</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-charts">
+  <div class="chart-container">
+    <div class="chart-title">Visão Anual 2026</div>
+    <canvas id="chartBarras"></canvas>
+  </div>
+  <div class="chart-container">
+    <div class="chart-title">Distribuição de Despesas</div>
+    <canvas id="chartDonut"></canvas>
+  </div>
+</div>
+
+<div class="extrato-container">
+  <div style="margin-bottom:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px">Extrato</div>
+  <div class="extrato-header">
+    <button class="filter-btn active" data-tipo="todos">Todos</button>
+    <button class="filter-btn" data-tipo="receita">Receitas</button>
+    <button class="filter-btn" data-tipo="despesa">Despesas</button>
+    <button class="filter-btn" data-tipo="investimento">Investimentos</button>
+    <input type="text" class="search-box" id="searchBox" placeholder="Buscar...">
+  </div>
+  <div id="listaLancamentos"></div>
+</div>
+
+<div class="socios-container">
+  <div style="margin-bottom:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px">Participação dos Sócios</div>
+  <div id="listaSocios"></div>
+</div>
+
+<!-- MODAL NOVO LANÇAMENTO -->
+<div class="modal-overlay" id="modalLancamento">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">Novo Lançamento</div>
+      <button class="btn-close" onclick="fecharModal()">&times;</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="inputTipo">
+        <option value="receita">Receita</option>
+        <option value="despesa">Despesa</option>
+        <option value="investimento">Investimento</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoria</label>
+      <select class="form-select" id="inputCategoria"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descrição</label>
+      <input type="text" class="form-input" id="inputDescricao" placeholder="Ex: Venda de produto">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Valor</label>
+      <input type="text" class="form-input" id="inputValor" placeholder="$0.00">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Sócio</label>
+      <select class="form-select" id="inputSocio"></select>
+    </div>
+    <div class="form-buttons">
+      <button class="btn-submit" onclick="salvarLancamento()">Salvar</button>
+      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER CONFIGURAÇÕES -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">Configurações</div>
+    <button class="btn-close" onclick="fecharDrawer()">&times;</button>
+  </div>
+  <div class="drawer-content">
+    <div class="drawer-section">
+      <div class="drawer-section-title">Nomes dos Sócios</div>
+      <input type="text" class="drawer-input" id="socio1" placeholder="Sócio 1">
+      <input type="text" class="drawer-input" id="socio2" placeholder="Sócio 2">
+      <input type="text" class="drawer-input" id="socio3" placeholder="Sócio 3">
+      <input type="text" class="drawer-input" id="socio4" placeholder="Sócio 4">
+      <button class="drawer-btn drawer-btn-primary" onclick="salvarSocios()">Salvar Nomes</button>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Dados</div>
+      <button class="drawer-btn drawer-btn-secondary" onclick="exportarDados()">📥 Exportar CSV</button>
+      <button class="drawer-btn drawer-btn-secondary" onclick="importarDados()">📤 Importar Dados</button>
+      <input type="file" id="fileImport" style="display:none" accept=".json">
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">Perigo</div>
+      <button class="drawer-btn drawer-btn-danger" onclick="confirmarApagar()">🗑️ Apagar Tudo</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+<script>
+// ESTADO GLOBAL
+let mesAtual = new Date().getMonth();
+let anoAtual = new Date().getFullYear();
+let lancamentos = [];
+let socios = ['Sócio 1', 'Sócio 2', 'Sócio 3', 'Sócio 4'];
+let filtroTipo = 'todos';
+let charts = {};
+
+// CATEGORIAS
+const categorias = {
+  receita: ['Venda de Produto/Serviço', 'Investimento Externo', 'Empréstimo', 'Outro'],
+  despesa: ['Aluguel', 'Salários', 'Fornecedores', 'Utilidades', 'Marketing', 'Outro'],
+  investimento: ['Equipamento', 'Estoque', 'Reforma', 'Software', 'Outro']
+};
+
+// INICIALIZAR
+document.addEventListener('DOMContentLoaded', () => {
+  carregarDados();
+  atualizarUI();
+  setupEventListeners();
+});
+
+function setupEventListeners() {
+  document.getElementById('btnMesAnterior').addEventListener('click', () => {
+    mesAtual--;
+    if(mesAtual < 0) { mesAtual = 11; anoAtual--; }
+    atualizarUI();
+  });
+  
+  document.getElementById('btnMesProximo').addEventListener('click', () => {
+    mesAtual++;
+    if(mesAtual > 11) { mesAtual = 0; anoAtual++; }
+    atualizarUI();
+  });
+  
+  document.getElementById('btnNovoLancamento').addEventListener('click', () => {
+    document.getElementById('modalLancamento').classList.add('ativo');
+    atualizarCategorias();
+    atualizarSocios();
+  });
+  
+  document.getElementById('btnConfig').addEventListener('click', () => {
+    document.getElementById('drawer').classList.add('ativo');
+    carregarSociosDrawer();
+  });
+  
+  document.getElementById('inputTipo').addEventListener('change', atualizarCategorias);
+  
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      filtroTipo = e.target.dataset.tipo;
+      atualizarExtrato();
+    });
+  });
+  
+  document.getElementById('searchBox').addEventListener('input', atualizarExtrato);
+  
+  document.getElementById('fileImport').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const dados = JSON.parse(event.target.result);
+          lancamentos = dados.lancamentos || [];
+          socios = dados.socios || socios;
+          salvarDados();
+          atualizarUI();
+          alert('Dados importados com sucesso!');
+        } catch(err) {
+          alert('Erro ao importar: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+  });
+  
+  document.getElementById('modalLancamento').addEventListener('click', (e) => {
+    if(e.target.id === 'modalLancamento') fecharModal();
+  });
+  
+  document.getElementById('drawer').addEventListener('click', (e) => {
+    if(e.target.id === 'drawer') fecharDrawer();
+  });
+}
+
+function atualizarCategorias() {
+  const tipo = document.getElementById('inputTipo').value;
+  const cats = categorias[tipo] || [];
+  const select = document.getElementById('inputCategoria');
+  select.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function atualizarSocios() {
+  const select = document.getElementById('inputSocio');
+  select.innerHTML = socios.map((s, i) => `<option value="${i}">${s}</option>`).join('');
+}
+
+function fecharModal() {
+  document.getElementById('modalLancamento').classList.remove('ativo');
+  document.getElementById('inputTipo').value = 'receita';
+  document.getElementById('inputDescricao').value = '';
+  document.getElementById('inputValor').value = '';
+  atualizarCategorias();
+}
+
+function fecharDrawer() {
+  document.getElementById('drawer').classList.remove('ativo');
+}
+
+function salvarLancamento() {
+  const tipo = document.getElementById('inputTipo').value;
+  const categoria = document.getElementById('inputCategoria').value;
+  const descricao = document.getElementById('inputDescricao').value;
+  let valor = document.getElementById('inputValor').value;
+  const socioIdx = parseInt(document.getElementById('inputSocio').value);
+  
+  if(!descricao || !valor) {
+    alert('Preencha todos os campos');
+    return;
+  }
+  
+  valor = parseFloat(valor.replace(/[^\d.-]/g, '')) || 0;
+  
+  lancamentos.push({
+    id: Date.now(),
+    tipo, categoria, descricao, valor, socioIdx,
+    data: new Date(anoAtual, mesAtual, new Date().getDate()),
+    criadoEm: new Date()
+  });
+  
+  salvarDados();
+  atualizarUI();
+  fecharModal();
+}
+
+function excluirLancamento(id) {
+  if(confirm('Excluir este lançamento?')) {
+    lancamentos = lancamentos.filter(l => l.id !== id);
+    salvarDados();
+    atualizarUI();
+  }
+}
+
+function retirarLancamento(id) {
+  const l = lancamentos.find(l => l.id === id);
+  if(l) {
+    l.retirado = !l.retirado;
+    salvarDados();
+    atualizarUI();
+  }
+}
+
+function atualizarUI() {
+  atualizarMes();
+  atualizarCards();
+  atualizarGraficos();
+  atualizarExtrato();
+  atualizarSociosUI();
+}
+
+function atualizarMes() {
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  document.getElementById('labelMes').textContent = `${meses[mesAtual]} ${anoAtual}`;
+}
+
+function atualizarCards() {
+  const lancsMes = lancamentos.filter(l => {
+    const d = new Date(l.data);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
+  });
+  
+  const receitas = lancsMes.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
+  const despesas = lancsMes.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
+  const investimentos = lancsMes.filter(l => l.tipo === 'investimento').reduce((a, l) => a + l.valor, 0);
+  const lucro = receitas - despesas - investimentos;
+  
+  document.getElementById('cardReceitas').textContent = formatarMoeda(receitas);
+  document.getElementById('cardDespesas').textContent = formatarMoeda(despesas);
+  document.getElementById('cardInvestimentos').textContent = formatarMoeda(investimentos);
+  document.getElementById('cardLucro').textContent = formatarMoeda(lucro);
+}
+
+function atualizarGraficos() {
+  // Gráfico de barras anual
+  const dadosMeses = [];
+  for(let m = 0; m < 12; m++) {
+    const lancsMes = lancamentos.filter(l => {
+      const d = new Date(l.data);
+      return d.getMonth() === m && d.getFullYear() === anoAtual && !l.retirado;
+    });
+    const receitas = lancsMes.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
+    const despesas = lancsMes.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
+    dadosMeses.push({receitas, despesas});
+  }
+  
+  const ctxBarras = document.getElementById('chartBarras').getContext('2d');
+  if(charts.barras) charts.barras.destroy();
+  charts.barras = new Chart(ctxBarras, {
+    type: 'bar',
+    data: {
+      labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+      datasets: [
+        {label: 'Receitas', data: dadosMeses.map(d => d.receitas), backgroundColor: 'rgba(0,212,170,0.8)'},
+        {label: 'Despesas', data: dadosMeses.map(d => d.despesas), backgroundColor: 'rgba(255,77,106,0.8)'}
+      ]
+    },
+    options: {responsive: true, maintainAspectRatio: true, plugins: {legend: {display: true, labels: {color: '#E4EAF0'}}}, scales: {y: {ticks: {color: '#6B8098'}, grid: {color: 'rgba(255,255,255,0.06)'}}, x: {ticks: {color: '#6B8098'}, grid: {display: false}}}}
+  });
+  
+  // Gráfico donut despesas
+  const lancsMes = lancamentos.filter(l => {
+    const d = new Date(l.data);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && l.tipo === 'despesa' && !l.retirado;
+  });
+  
+  const despesasPorCat = {};
+  lancsMes.forEach(l => {
+    despesasPorCat[l.categoria] = (despesasPorCat[l.categoria] || 0) + l.valor;
+  });
+  
+  const ctxDonut = document.getElementById('chartDonut').getContext('2d');
+  if(charts.donut) charts.donut.destroy();
+  charts.donut = new Chart(ctxDonut, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(despesasPorCat),
+      datasets: [{
+        data: Object.values(despesasPorCat),
+        backgroundColor: ['rgba(0,212,170,0.8)', 'rgba(255,77,106,0.8)', 'rgba(167,139,250,0.8)', 'rgba(255,180,0,0.8)', 'rgba(100,200,255,0.8)']
+      }]
+    },
+    options: {responsive: true, maintainAspectRatio: true, plugins: {legend: {display: true, labels: {color: '#E4EAF0'}}}}
+  });
+}
+
+function atualizarExtrato() {
+  const lancsMes = lancamentos.filter(l => {
+    const d = new Date(l.data);
+    const matchMes = d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    const matchTipo = filtroTipo === 'todos' || l.tipo === filtroTipo;
+    const search = document.getElementById('searchBox').value.toLowerCase();
+    const matchSearch = l.descricao.toLowerCase().includes(search) || l.categoria.toLowerCase().includes(search);
+    return matchMes && matchTipo && matchSearch;
+  });
+  
+  const html = lancsMes.map(l => `
+    <div class="lancamento-item" style="${l.retirado ? 'opacity:0.5' : ''}">
+      <div class="lancamento-info">
+        <div class="lancamento-desc">${l.descricao}</div>
+        <div class="lancamento-cat">${l.categoria} • ${socios[l.socioIdx]}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${formatarMoeda(l.valor)}</div>
+        <button class="btn-action" onclick="retirarLancamento(${l.id})">${l.retirado ? '↩️' : '✓'}</button>
+        <button class="btn-action" onclick="excluirLancamento(${l.id})">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+  
+  document.getElementById('listaLancamentos').innerHTML = html || '<div style="color:var(--muted);font-size:13px">Nenhum lançamento</div>';
+}
+
+function atualizarSociosUI() {
+  const lancsMes = lancamentos.filter(l => {
+    const d = new Date(l.data);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
+  });
+  
+  const saldoSocios = socios.map((nome, idx) => {
+    const lancsSocio = lancsMes.filter(l => l.socioIdx === idx);
+    const receitas = lancsSocio.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
+    const despesas = lancsSocio.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
+    const investimentos = lancsSocio.filter(l => l.tipo === 'investimento').reduce((a, l) => a + l.valor, 0);
+    const saldo = receitas - despesas - investimentos;
+    return {nome, saldo};
+  });
+  
+  const maxAbsSaldo = Math.max(...saldoSocios.map(s => Math.abs(s.saldo)), 1);
+  
+  const html = saldoSocios.map(s => {
+    const percentual = Math.abs(s.saldo) / maxAbsSaldo * 100;
+    const isNegativo = s.saldo < 0;
+    return `
+      <div class="socio-card">
+        <div class="socio-header">
+          <div class="socio-nome">${s.nome}</div>
+          <div class="socio-valor ${isNegativo ? 'negativo' : 'positivo'}">${s.saldo < 0 ? '-' : '+'}${formatarMoeda(Math.abs(s.saldo))}</div>
+        </div>
+        <div class="socio-bar">
+          <div class="socio-bar-fill ${isNegativo ? 'negativo' : ''}" style="width:${percentual}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  document.getElementById('listaSocios').innerHTML = html;
+}
+
+function salvarSocios() {
+  socios = [
+    document.getElementById('socio1').value || 'Sócio 1',
+    document.getElementById('socio2').value || 'Sócio 2',
+    document.getElementById('socio3').value || 'Sócio 3',
+    document.getElementById('socio4').value || 'Sócio 4'
+  ];
+  salvarDados();
+  atualizarUI();
+  alert('Nomes salvos!');
+}
+
+function carregarSociosDrawer() {
+  document.getElementById('socio1').value = socios[0];
+  document.getElementById('socio2').value = socios[1];
+  document.getElementById('socio3').value = socios[2];
+  document.getElementById('socio4').value = socios[3];
+}
+
+function exportarDados() {
+  const dados = {lancamentos, socios, exportadoEm: new Date().toISOString()};
+  const csv = 'data:text/csv;charset=utf-8,\uFEFF' + 
+    'Data,Tipo,Categoria,Descrição,Valor,Sócio\n' +
+    lancamentos.map(l => {
+      const d = new Date(l.data);
+      return `${d.toLocaleDateString('pt-BR')},${l.tipo},${l.categoria},"${l.descricao}",${l.valor},${socios[l.socioIdx]}`;
+    }).join('\n');
+  
+  const link = document.createElement('a');
+  link.href = csv;
+  link.download = `financeiro_${new Date().toISOString().split('T')[0]}.csv`;
+  link.click();
+}
+
+function importarDados() {
+  document.getElementById('fileImport').click();
+}
+
+function confirmarApagar() {
+  if(confirm('Tem certeza? Isto não pode ser desfeito!')) {
+    if(confirm('CONFIRMAR: Apagar TODOS os dados?')) {
+      lancamentos = [];
+      salvarDados();
+      atualizarUI();
+      alert('Todos os dados foram apagados');
+    }
+  }
+}
+
+function formatarMoeda(valor) {
+  return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(valor);
+}
+
+function salvarDados() {
+  localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
+  localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+}
+
+function carregarDados() {
+  const lacs = localStorage.getItem('financeiro_lancamentos');
+  const socs = localStorage.getItem('financeiro_socios');
+  
+  if(lacs) lancamentos = JSON.parse(lacs);
+  if(socs) socios = JSON.parse(socs);
+}
+</script>
+
+</body>
+</html>
