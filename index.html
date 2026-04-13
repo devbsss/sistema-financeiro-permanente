@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gestão Financeira</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -38,6 +39,14 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   padding:14px 20px;
   display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
 }
+
+#statusSync{
+  font-size:12px;color:var(--muted);font-family:'Syne',sans-serif;
+  animation:fadeUp 0.3s ease;
+}
+#statusSync.syncing{color:var(--yellow)}
+#statusSync.synced{color:var(--green)}
+#statusSync.error{color:var(--red)}
 
 .btn-mes{
   background:transparent;border:none;color:var(--muted);font-size:18px;
@@ -99,118 +108,138 @@ canvas{max-width:100%;height:auto}
 .lancamento-item{
   background:var(--card);border:1px solid var(--border);border-radius:10px;
   padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
-  transition:all 0.2s;
+  animation:fadeUp 0.3s ease;
 }
-.lancamento-item:hover{border-color:rgba(255,255,255,0.10)}
 .lancamento-info{flex:1}
-.lancamento-desc{font-size:13px;color:var(--text);font-weight:500;margin-bottom:2px}
-.lancamento-cat{font-size:11px;color:var(--muted)}
-.lancamento-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
+.lancamento-nome{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text);margin-bottom:2px}
+.lancamento-meta{font-size:11px;color:var(--muted)}
+.lancamento-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-right:12px}
 .lancamento-valor.receita{color:var(--green)}
 .lancamento-valor.despesa{color:var(--red)}
 .lancamento-valor.investimento{color:var(--purple)}
-.lancamento-actions{display:flex;gap:6px}
-.btn-action{
-  background:transparent;border:1px solid var(--border);color:var(--muted);
-  border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;transition:all 0.2s;
+.lancamento-actions{display:flex;gap:4px}
+.lancamento-actions button{
+  background:transparent;border:1px solid var(--border);color:var(--text);
+  width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:12px;
+  transition:all 0.2s;
 }
-.btn-action:hover{border-color:var(--red);color:var(--red)}
+.lancamento-actions button:hover{border-color:var(--green);color:var(--green)}
 
-/* SÓCIOS */
-.socios-container{padding:16px}
-.socio-card{
+/* PARTICIPAÇÃO */
+.socio-container{padding:16px}
+.socio-item{
   background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:12px;margin-bottom:8px;
+  padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;
 }
-.socio-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.socio-nome{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)}
+.socio-nome{font-family:'Syne',sans-serif;font-weight:600;font-size:13px;color:var(--text)}
 .socio-valor{font-family:'Syne',sans-serif;font-weight:700;font-size:14px}
 .socio-valor.positivo{color:var(--green)}
 .socio-valor.negativo{color:var(--red)}
-.socio-bar{
-  background:var(--input);border-radius:4px;height:6px;overflow:hidden;margin-bottom:4px;
-}
-.socio-bar-fill{height:100%;background:var(--green);transition:width 0.3s}
-.socio-bar-fill.negativo{background:var(--red)}
 
 /* MODAL */
 .modal-overlay{
-  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-  z-index:1000;align-items:center;justify-content:center;
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.5);z-index:200;animation:fadeUp 0.2s ease;
 }
-.modal-overlay.ativo{display:flex}
+.modal-overlay.active{display:block}
 .modal-content{
-  background:var(--card);border:1px solid var(--border);border-radius:16px;
-  padding:24px;max-width:500px;width:90%;max-height:90vh;overflow-y:auto;
-  animation:modalIn 0.3s;
+  position:fixed;bottom:0;left:0;right:0;background:var(--card);
+  border-top:1px solid var(--border);border-radius:20px 20px 0 0;
+  padding:24px;max-height:90vh;overflow-y:auto;z-index:201;
+  animation:modalIn 0.3s ease;
 }
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.modal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;color:var(--text)}
-.btn-close{background:transparent;border:none;color:var(--muted);font-size:20px;cursor:pointer}
-.btn-close:hover{color:var(--text)}
+.modal-header{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:18px;
+  margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;
+}
+.modal-close{
+  background:transparent;border:none;color:var(--text);font-size:24px;
+  cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+}
 .form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px}
+.form-label{
+  display:block;font-size:12px;color:var(--muted);margin-bottom:6px;
+  text-transform:uppercase;font-family:'Syne',sans-serif;
+}
 .form-input,.form-select{
   width:100%;background:var(--input);border:1px solid var(--border);
-  border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;
-  font-family:'DM Sans',sans-serif;transition:all 0.2s;
+  border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;
+  font-family:'DM Sans',sans-serif;transition:border 0.2s;
 }
-.form-input:focus,.form-select:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 2px rgba(0,212,170,0.1)}
+.form-input:focus,.form-select:focus{outline:none;border-color:var(--green)}
 .form-input::placeholder{color:var(--muted)}
-.form-buttons{display:flex;gap:8px;margin-top:20px}
-.form-buttons button{flex:1;padding:10px;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;border:none;font-family:'Syne',sans-serif}
-.btn-submit{background:var(--green);color:#000}
-.btn-submit:hover{background:#00F0C0}
-.btn-cancel{background:var(--input);color:var(--text);border:1px solid var(--border)}
-.btn-cancel:hover{border-color:var(--green);color:var(--green)}
+.form-actions{
+  display:flex;gap:8px;margin-top:20px;
+}
+.form-actions button{flex:1}
 
 /* DRAWER */
-.drawer{
-  position:fixed;right:-100%;top:0;width:100%;max-width:400px;height:100vh;
-  background:var(--card);border-left:1px solid var(--border);z-index:999;
-  transition:right 0.3s;overflow-y:auto;
+.drawer-overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.5);z-index:300;
 }
-.drawer.ativo{right:0}
-.drawer-header{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.drawer-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--text)}
-.drawer-content{padding:16px}
-.drawer-section{margin-bottom:20px}
-.drawer-section-title{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.drawer-overlay.active{display:block}
+.drawer-content{
+  position:fixed;right:0;top:0;bottom:0;width:min(100%,400px);
+  background:var(--card);border-left:1px solid var(--border);
+  padding:20px;overflow-y:auto;z-index:301;animation:slideIn 0.3s ease;
+}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.drawer-header{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:18px;
+  margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;
+}
+.drawer-close{
+  background:transparent;border:none;color:var(--text);font-size:24px;
+  cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+}
+.drawer-section{margin-bottom:24px}
+.drawer-section-title{
+  font-family:'Syne',sans-serif;font-weight:700;font-size:13px;
+  color:var(--muted);text-transform:uppercase;margin-bottom:12px;
+}
 .drawer-input{
   width:100%;background:var(--input);border:1px solid var(--border);
-  border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;
-  margin-bottom:8px;
+  border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;
+  margin-bottom:8px;font-family:'DM Sans',sans-serif;
 }
+.drawer-input:focus{outline:none;border-color:var(--green)}
 .drawer-btn{
-  width:100%;padding:10px;border-radius:8px;border:none;font-weight:600;cursor:pointer;
-  margin-bottom:8px;font-family:'Syne',sans-serif;font-size:13px;
-  transition:all 0.2s;
+  width:100%;background:transparent;border:1px solid var(--border);
+  color:var(--text);border-radius:8px;padding:10px;font-size:13px;
+  cursor:pointer;transition:all 0.2s;margin-bottom:8px;font-family:'Syne',sans-serif;
 }
-.drawer-btn-primary{background:var(--green);color:#000}
-.drawer-btn-primary:hover{background:#00F0C0}
-.drawer-btn-secondary{background:var(--input);color:var(--text);border:1px solid var(--border)}
-.drawer-btn-secondary:hover{border-color:var(--green);color:var(--green)}
-.drawer-btn-danger{background:rgba(255,77,106,0.1);color:var(--red);border:1px solid rgba(255,77,106,0.3)}
-.drawer-btn-danger:hover{background:rgba(255,77,106,0.2)}
+.drawer-btn:hover{border-color:var(--green);color:var(--green)}
+.drawer-btn.danger{border-color:var(--red);color:var(--red)}
+.drawer-btn.danger:hover{background:rgba(255,77,106,0.1)}
 
-/* RESPONSIVO */
+/* RESPONSIVE */
 @media(max-width:768px){
-  .grid-cards{grid-template-columns:1fr}
-  .grid-charts{grid-template-columns:1fr}
-  .drawer{max-width:100%}
-  .modal-content{width:95%}
+  .grid-cards,.grid-charts{grid-template-columns:1fr}
+  .drawer-content{width:100%}
+  #header{flex-direction:column;gap:8px}
 }
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:20px;right:20px;background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:12px 16px;
+  font-size:13px;color:var(--text);z-index:400;animation:toastIn 0.3s ease;
+}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
 </style>
 </head>
 <body>
 
 <div id="header">
-    <button class="btn-mes" id="btnMesAnterior">←</button>
-    <span id="labelMes"></span>
-    <button class="btn-mes" id="btnMesProximo">→</button>
-    <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
-    <button class="btn-config" id="btnConfig">⚙️</button>
-  </div>
+  <button class="btn-mes" id="btnMesAnterior">←</button>
+  <span id="labelMes">Março 2026</span>
+  <button class="btn-mes" id="btnMesProximo">→</button>
+  <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
+  <button class="btn-icon" id="btnConfig">⚙️</button>
+  <span id="statusSync">Sincronizando...</span>
+</div>
 
 <div class="grid-cards">
   <div class="card">
@@ -253,7 +282,7 @@ canvas{max-width:100%;height:auto}
 
 <div class="grid-charts">
   <div class="chart-container">
-    <div class="chart-title">Visão Anual 2026</div>
+    <div class="chart-title">Receitas por Mês (2026)</div>
     <canvas id="chartBarras"></canvas>
   </div>
   <div class="chart-container">
@@ -263,28 +292,27 @@ canvas{max-width:100%;height:auto}
 </div>
 
 <div class="extrato-container">
-  <div style="margin-bottom:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px">Extrato</div>
   <div class="extrato-header">
-    <button class="filter-btn active" data-tipo="todos">Todos</button>
-    <button class="filter-btn" data-tipo="receita">Receitas</button>
-    <button class="filter-btn" data-tipo="despesa">Despesas</button>
-    <button class="filter-btn" data-tipo="investimento">Investimentos</button>
+    <button class="filter-btn active" data-filter="todos">Todos</button>
+    <button class="filter-btn" data-filter="receitas">Receitas</button>
+    <button class="filter-btn" data-filter="despesas">Despesas</button>
+    <button class="filter-btn" data-filter="investimentos">Investimentos</button>
     <input type="text" class="search-box" id="searchBox" placeholder="Buscar...">
   </div>
-  <div id="listaLancamentos"></div>
+  <div id="extratoLista"></div>
 </div>
 
-<div class="socios-container">
-  <div style="margin-bottom:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px">Participação dos Sócios</div>
-  <div id="listaSocios"></div>
+<div class="socio-container">
+  <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:12px;color:var(--text)">Participação dos Sócios</div>
+  <div id="sociosList"></div>
 </div>
 
 <!-- MODAL NOVO LANÇAMENTO -->
-<div class="modal-overlay" id="modalLancamento">
+<div class="modal-overlay" id="modalOverlay">
   <div class="modal-content">
     <div class="modal-header">
-      <div class="modal-title">Novo Lançamento</div>
-      <button class="btn-close" onclick="fecharModal()">&times;</button>
+      <span>Novo Lançamento</span>
+      <button class="modal-close" id="btnCloseModal">✕</button>
     </div>
     <div class="form-group">
       <label class="form-label">Tipo</label>
@@ -296,437 +324,533 @@ canvas{max-width:100%;height:auto}
     </div>
     <div class="form-group">
       <label class="form-label">Categoria</label>
-      <select class="form-select" id="inputCategoria"></select>
+      <select class="form-select" id="inputCategoria">
+        <option>Venda de Produto/Serviço</option>
+      </select>
     </div>
     <div class="form-group">
       <label class="form-label">Descrição</label>
-      <input type="text" class="form-input" id="inputDescricao" placeholder="Ex: Venda de produto">
+      <input type="text" class="form-input" id="inputDescricao" placeholder="Ex: Venda para cliente X">
     </div>
     <div class="form-group">
       <label class="form-label">Valor</label>
       <input type="text" class="form-input" id="inputValor" placeholder="$0.00">
     </div>
     <div class="form-group">
-      <label class="form-label">Sócio</label>
-      <select class="form-select" id="inputSocio"></select>
+      <label class="form-label">Sócio Responsável</label>
+      <select class="form-select" id="inputSocio">
+        <option value="0">Ana</option>
+        <option value="1">Luiz</option>
+        <option value="2">Geruza</option>
+        <option value="3">Lucas</option>
+      </select>
     </div>
-    <div class="form-buttons">
-      <button class="btn-submit" onclick="salvarLancamento()">Salvar</button>
-      <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+    <div class="form-actions">
+      <button class="btn-ghost" id="btnCancelar">Cancelar</button>
+      <button class="btn-primary" id="btnSalvar">Salvar</button>
     </div>
   </div>
 </div>
 
 <!-- DRAWER CONFIGURAÇÕES -->
-<div class="drawer" id="drawer">
+<div class="drawer-overlay" id="drawerOverlay"></div>
+<div class="drawer-content" id="drawerContent">
   <div class="drawer-header">
-    <div class="drawer-title">Configurações</div>
-    <button class="btn-close" onclick="fecharDrawer()">&times;</button>
+    <span>Configurações</span>
+    <button class="drawer-close" id="btnCloseDrawer">✕</button>
   </div>
-  <div class="drawer-content">
-    <div class="drawer-section">
-      <div class="drawer-section-title">Nomes dos Sócios</div>
-      <input type="text" class="drawer-input" id="socio1" placeholder="Sócio 1">
-      <input type="text" class="drawer-input" id="socio2" placeholder="Sócio 2">
-      <input type="text" class="drawer-input" id="socio3" placeholder="Sócio 3">
-      <input type="text" class="drawer-input" id="socio4" placeholder="Sócio 4">
-      <button class="drawer-btn drawer-btn-primary" onclick="salvarSocios()">Salvar Nomes</button>
-    </div>
-    <div class="drawer-section">
-      <div class="drawer-section-title">Dados</div>
-      <button class="drawer-btn drawer-btn-secondary" onclick="exportarDados()">📥 Exportar CSV</button>
-      <button class="drawer-btn drawer-btn-secondary" onclick="importarDados()">📤 Importar Dados</button>
-      <input type="file" id="fileImport" style="display:none" accept=".json">
-    </div>
-    <div class="drawer-section">
-      <div class="drawer-section-title">Perigo</div>
-      <button class="drawer-btn drawer-btn-danger" onclick="confirmarApagar()">🗑️ Apagar Tudo</button>
-    </div>
+  <div class="drawer-section">
+    <div class="drawer-section-title">Nomes dos Sócios</div>
+    <input type="text" class="drawer-input" id="inputSocio0" placeholder="Sócio 1">
+    <input type="text" class="drawer-input" id="inputSocio1" placeholder="Sócio 2">
+    <input type="text" class="drawer-input" id="inputSocio2" placeholder="Sócio 3">
+    <input type="text" class="drawer-input" id="inputSocio3" placeholder="Sócio 4">
+  </div>
+  <div class="drawer-section">
+    <div class="drawer-section-title">Ações</div>
+    <button class="drawer-btn" id="btnExportar">📥 Exportar CSV</button>
+    <button class="drawer-btn" id="btnImportar">📤 Importar Dados</button>
+    <button class="drawer-btn danger" id="btnLimpar">🗑️ Apagar Tudo</button>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 <script>
-// ESTADO GLOBAL
-let mesAtual = new Date().getMonth();
-let anoAtual = new Date().getFullYear();
-let lancamentos = [{"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:00:27.755Z", "dataRetirada": "2026-03-14T05:10:59.812Z", "descricao": "Test de receita", "observacoes": "", "retirado": true, "socio": "Geruza", "tipo": "receita", "valor": 20, "id": "-OnehtnOVom28Ds1nuFe"}, {"categoria": "Marketing e Publicidade", "criadoEm": "2026-03-14T05:00:54.754Z", "dataRetirada": "2026-03-14T05:10:57.452Z", "descricao": "Teste de despesa", "observacoes": "", "retirado": true, "socio": "Ana", "tipo": "despesa", "valor": 20, "id": "-Onei-OGxiob4ZTUV2bS"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:09:15.120Z", "dataRetirada": "2026-03-14T05:10:58.464Z", "descricao": "ricooo", "observacoes": "", "retirado": true, "socio": "Geruza", "tipo": "receita", "valor": 2343462.14, "id": "-OnejtofoZHIq6m8o1zR"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:12:21.197Z", "descricao": "Luane", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 200, "id": "-OnekbF8REDUE2elffgD"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:12:40.993Z", "descricao": "Ravyla", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 380, "id": "-Onekg4RuoDqYFJUYZmh"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:12:55.660Z", "descricao": "Aline", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 109.98, "id": "-OnekjebkoglhSdWPNUc"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:13:11.197Z", "descricao": "Neia", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 190, "id": "-OneknSNC0wyr0AHmBl5"}, {"categoria": "Fornecedores", "criadoEm": "2026-03-14T05:13:39.321Z", "descricao": "Seringas", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 34.1, "id": "-OnekuJoegZmKbRzr10o"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:13:54.722Z", "descricao": "Jorciane", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 25, "id": "-Oneky4S7BteUpd13_DC"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:14:13.412Z", "descricao": "Joselaine", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 249, "id": "-Onel1dUyMY1CRO1B3op"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:14:30.552Z", "descricao": "Dmazia", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 130, "id": "-Onel5pIfvcguBfpWNxu"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:14:55.358Z", "descricao": "Vinicius", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 211.48, "id": "-OnelBstFlM1w4f0GLwY"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:15:12.135Z", "descricao": "Sabrina", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 92, "id": "-OnelFz1eQSVRETqZnKI"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:15:35.290Z", "descricao": "jociane", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 170, "id": "-OnelLcpozRzgByEKLhA"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:15:49.572Z", "descricao": "La\u00eds", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 44, "id": "-OnelP6zaDD89DI8Cn0e"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:16:10.499Z", "descricao": "Ciane", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 140, "id": "-OnelUDzn68xO2zete2i"}, {"categoria": "Outras Despesas", "criadoEm": "2026-03-14T05:16:37.954Z", "descricao": "Gasolina entrega", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 20, "id": "-Onel_vxrCswXfQBadEJ"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-14T05:17:06.117Z", "descricao": "Antonia", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 85, "id": "-Onelgo-CLaJfUR8ZTsK"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-16T20:12:51.823Z", "descricao": "Eduardo", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 160, "id": "-OnsGuYIlaDWu_mmHdML"}, {"categoria": "Venda de Produto/Servi\u00e7o", "criadoEm": "2026-03-16T20:13:14.357Z", "descricao": "Delran", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 212, "id": "-OnsH-2OvY61IXIZPlFh"}, {"categoria": "Outras Despesas", "criadoEm": "2026-03-16T20:13:36.630Z", "descricao": "Envio", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 10, "id": "-OnsH4UO4GNkg0ybyKKz"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-17T21:17:56.789Z", "descricao": "Tirz", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 100, "id": "-OnxeOeFv8KfGn7z_Ug2"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-18T12:15:26.146Z", "descricao": "Tirz", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 192, "id": "-Oo-roTc2Ka7b_Zdpaqu"}, {"categoria": "Outras Despesas", "criadoEm": "2026-03-18T12:15:39.988Z", "descricao": "Gasolina", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 20, "id": "-Oo-rrqtbnXO_U6lsOh5"}, {"categoria": "Fornecedores", "criadoEm": "2026-03-18T12:16:15.481Z", "descricao": "Reposi\u00e7\u00e3o", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 803.33, "id": "-Oo-s-WV0Ev_FlTfmn2L"}, {"categoria": "Outras Despesas", "criadoEm": "2026-03-20T22:20:48.136Z", "descricao": "site", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 20, "id": "-OoCKYdlIyoHgHdRLQxt"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-23T20:01:57.596Z", "descricao": "Silvia", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 270, "id": "-OoRHY42CuPHfkivEOZc"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-28T19:46:57.838Z", "descricao": "Tirze", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 120, "id": "-Oopz39PM_tBei2XKEsX"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-30T12:13:03.729Z", "descricao": "Aecio", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 220, "id": "-OoyeLhNKYKCXP78Y4cM"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-30T18:13:55.946Z", "descricao": "Nil", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 150, "id": "-OozwwtJT9G6hvGrjI1L"}, {"categoria": "Outras Despesas", "criadoEm": "2026-03-30T18:17:17.547Z", "descricao": "Seringa", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 40, "id": "-Oozxi6HsoqhJWcUyNuU"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-31T18:29:02.191Z", "descricao": "Lizandra", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 180, "id": "-Op48ztGxfOmIWffeum5"}, {"categoria": "Outras Receitas", "criadoEm": "2026-03-31T19:21:19.296Z", "descricao": "Vitor", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 190, "id": "-Op4KxmbX5Ep_nMW0EBW"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-03T02:33:03.123Z", "descricao": "Lais", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 75, "id": "-OpGAxSyK25D6LjBB7Hx"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-03T02:33:24.111Z", "descricao": "Mel", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 100, "id": "-OpGB1_tnpYQ797gMkAQ"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-04T05:54:02.550Z", "descricao": "Tirz", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 280, "id": "-OpM2YPVv8yq38mfKinY"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-05T15:55:27.401Z", "descricao": "Lucas", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 400, "id": "-OpTLmwDSSHI5lhXDutB"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-06T22:03:45.816Z", "descricao": "Silvia", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 350, "id": "-OpZofnz40LD8p7pyeGQ"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-06T22:06:21.633Z", "descricao": "Tenby", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 80, "id": "-OpZpGqf0raHdMhaquML"}, {"categoria": "Outras Despesas", "criadoEm": "2026-04-06T22:50:20.453Z", "descricao": "Gasoline", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "despesa", "valor": 30, "id": "-OpZzL56fDGlvh8LMdfk"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-08T00:51:39.168Z", "descricao": "Laurel", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 190, "id": "-OpeZgs8aV9qTC7VX-Mo"}, {"categoria": "Outras Receitas", "criadoEm": "2026-04-11T00:42:54.462Z", "descricao": "Lala", "observacoes": "", "retirado": false, "socio": "Geral", "tipo": "receita", "valor": 290, "id": "-OptzT0PbRHcWnz3OJi_"}];
-let socios = ["Ana", "Luiz", "Geruza", "Lucas"];
-let filtroTipo = 'todos';
-let charts = {};
+const GITHUB_TOKEN = localStorage.getItem('ghToken') || prompt('Cole seu token GitHub:');
+const GITHUB_OWNER = 'devbsss';
+const GITHUB_REPO = 'sistema-financeiro-permanente';
+const GITHUB_FILE = 'data.json';
 
-// CATEGORIAS
-const categorias = {
-  receita: ['Venda de Produto/Serviço', 'Investimento Externo', 'Empréstimo', 'Outro'],
-  despesa: ['Aluguel', 'Salários', 'Fornecedores', 'Utilidades', 'Marketing', 'Outro'],
-  investimento: ['Equipamento', 'Estoque', 'Reforma', 'Software', 'Outro']
-};
+let mesAtual = 3; // Março (0-11)
+let anoAtual = 2026;
+let lancamentos = [];
+let socios = ['Ana', 'Luiz', 'Geruza', 'Lucas'];
+let filtroAtivo = 'todos';
+let chartBarras, chartDonut;
 
-// INICIALIZAR
-document.addEventListener('DOMContentLoaded', () => {
-  carregarDados();
-  atualizarUI();
-  setupEventListeners();
-});
-
-function setupEventListeners() {
-  document.getElementById('btnMesAnterior').addEventListener('click', () => {
-    mesAtual--;
-    if(mesAtual < 0) { mesAtual = 11; anoAtual--; }
-    atualizarUI();
-  });
-  
-  document.getElementById('btnMesProximo').addEventListener('click', () => {
-    mesAtual++;
-    if(mesAtual > 11) { mesAtual = 0; anoAtual++; }
-    atualizarUI();
-  });
-  
-  document.getElementById('btnNovoLancamento').addEventListener('click', () => {
-    document.getElementById('modalLancamento').classList.add('ativo');
-    atualizarCategorias();
-    atualizarSocios();
-  });
-  
-  document.getElementById('btnConfig').addEventListener('click', () => {
-    document.getElementById('drawer').classList.add('ativo');
-    carregarSociosDrawer();
-  });
-  
-  document.getElementById('inputTipo').addEventListener('change', atualizarCategorias);
-  
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      filtroTipo = e.target.dataset.tipo;
-      atualizarExtrato();
+// ===== SINCRONIZAÇÃO COM GITHUB =====
+async function carregarDoGitHub() {
+  try {
+    atualizarStatus('Sincronizando...', 'syncing');
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3.raw'
+      }
     });
-  });
-  
-  document.getElementById('searchBox').addEventListener('input', atualizarExtrato);
-  
-  document.getElementById('fileImport').addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if(file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const dados = JSON.parse(event.target.result);
-          lancamentos = dados.lancamentos || [];
-          socios = dados.socios || socios;
-          salvarDados();
-          atualizarUI();
-          alert('Dados importados com sucesso!');
-        } catch(err) {
-          alert('Erro ao importar: ' + err.message);
-        }
-      };
-      reader.readAsText(file);
+    
+    if (response.ok) {
+      const data = await response.json();
+      lancamentos = data.lancamentos || [];
+      socios = data.socios || ['Ana', 'Luiz', 'Geruza', 'Lucas'];
+      atualizarStatus('Sincronizado ✓', 'synced');
+      setTimeout(() => atualizarStatus('', ''), 2000);
+    } else {
+      // Se não encontrar o arquivo, usar dados locais
+      carregarDoLocal();
+      atualizarStatus('', '');
     }
-  });
-  
-  document.getElementById('modalLancamento').addEventListener('click', (e) => {
-    if(e.target.id === 'modalLancamento') fecharModal();
-  });
-  
-  document.getElementById('drawer').addEventListener('click', (e) => {
-    if(e.target.id === 'drawer') fecharDrawer();
-  });
-}
-
-function atualizarCategorias() {
-  const tipo = document.getElementById('inputTipo').value;
-  const cats = categorias[tipo] || [];
-  const select = document.getElementById('inputCategoria');
-  select.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-}
-
-function atualizarSocios() {
-  const select = document.getElementById('inputSocio');
-  select.innerHTML = socios.map((s, i) => `<option value="${i}">${s}</option>`).join('');
-}
-
-function fecharModal() {
-  document.getElementById('modalLancamento').classList.remove('ativo');
-  document.getElementById('inputTipo').value = 'receita';
-  document.getElementById('inputDescricao').value = '';
-  document.getElementById('inputValor').value = '';
-  atualizarCategorias();
-}
-
-function fecharDrawer() {
-  document.getElementById('drawer').classList.remove('ativo');
-}
-
-function salvarLancamento() {
-  const tipo = document.getElementById('inputTipo').value;
-  const categoria = document.getElementById('inputCategoria').value;
-  const descricao = document.getElementById('inputDescricao').value;
-  let valor = document.getElementById('inputValor').value;
-  const socioIdx = parseInt(document.getElementById('inputSocio').value);
-  
-  if(!descricao || !valor) {
-    alert('Preencha todos os campos');
-    return;
+  } catch (error) {
+    console.error('Erro ao carregar do GitHub:', error);
+    carregarDoLocal();
+    atualizarStatus('Modo offline', 'error');
   }
-  
-  valor = parseFloat(valor.replace(/[^\d.-]/g, '')) || 0;
-  
-  lancamentos.push({
-    id: Date.now(),
-    tipo, categoria, descricao, valor, socioIdx,
-    data: new Date(anoAtual, mesAtual, new Date().getDate()),
-    criadoEm: new Date()
-  });
-  
-  salvarDados();
   atualizarUI();
-  fecharModal();
 }
 
-function excluirLancamento(id) {
-  if(confirm('Excluir este lançamento?')) {
-    lancamentos = lancamentos.filter(l => l.id !== id);
-    salvarDados();
-    atualizarUI();
+async function salvarNoGitHub() {
+  try {
+    atualizarStatus('Salvando...', 'syncing');
+    const data = {
+      lancamentos: lancamentos,
+      socios: socios,
+      ultimaAtualizacao: new Date().toISOString()
+    };
+    
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
+    
+    // Primeiro, obter o SHA do arquivo atual
+    let sha = null;
+    try {
+      const getResponse = await fetch(url, {
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (getResponse.ok) {
+        const fileData = await getResponse.json();
+        sha = fileData.sha;
+      }
+    } catch (e) {
+      console.log('Arquivo não existe ainda, será criado');
+    }
+    
+    // Agora, fazer o PUT para atualizar ou criar o arquivo
+    const putResponse = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `Atualização automática - ${new Date().toLocaleString('pt-BR')}`,
+        content: btoa(JSON.stringify(data, null, 2)),
+        sha: sha
+      })
+    });
+    
+    if (putResponse.ok) {
+      atualizarStatus('Sincronizado ✓', 'synced');
+      setTimeout(() => atualizarStatus('', ''), 2000);
+      mostrarToast('Dados salvos com sucesso!', 'success');
+    } else {
+      throw new Error('Erro ao salvar no GitHub');
+    }
+  } catch (error) {
+    console.error('Erro ao salvar no GitHub:', error);
+    atualizarStatus('Erro ao sincronizar', 'error');
+    mostrarToast('Erro ao sincronizar. Dados salvos localmente.', 'error');
+    salvarNoLocal();
   }
 }
 
-function retirarLancamento(id) {
-  const l = lancamentos.find(l => l.id === id);
-  if(l) {
-    l.retirado = !l.retirado;
-    salvarDados();
-    atualizarUI();
+function carregarDoLocal() {
+  const dados = localStorage.getItem('sistemaMamae');
+  if (dados) {
+    const parsed = JSON.parse(dados);
+    lancamentos = parsed.lancamentos || [];
+    socios = parsed.socios || ['Ana', 'Luiz', 'Geruza', 'Lucas'];
   }
 }
 
+function salvarNoLocal() {
+  localStorage.setItem('sistemaMamae', JSON.stringify({
+    lancamentos: lancamentos,
+    socios: socios
+  }));
+}
+
+function atualizarStatus(texto, classe) {
+  const el = document.getElementById('statusSync');
+  el.textContent = texto;
+  el.className = classe;
+}
+
+// ===== INTERFACE =====
 function atualizarUI() {
-  atualizarMes();
   atualizarCards();
   atualizarGraficos();
   atualizarExtrato();
-  atualizarSociosUI();
-}
-
-function atualizarMes() {
-  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  document.getElementById('labelMes').textContent = `${meses[mesAtual]} ${anoAtual}`;
+  atualizarSocios();
+  atualizarCategorias();
 }
 
 function atualizarCards() {
-  const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.criadoEm || l.data);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
+  const lancamentosMes = lancamentos.filter(l => {
+    const data = new Date(l.criadoEm);
+    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual;
   });
   
-  const receitas = lancsMes.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
-  const despesas = lancsMes.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
-  const investimentos = lancsMes.filter(l => l.tipo === 'investimento').reduce((a, l) => a + l.valor, 0);
-  const lucro = receitas - despesas - investimentos;
+  const receitas = lancamentosMes.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
+  const despesas = lancamentosMes.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
+  const investimentos = lancamentosMes.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
   
   document.getElementById('cardReceitas').textContent = formatarMoeda(receitas);
   document.getElementById('cardDespesas').textContent = formatarMoeda(despesas);
   document.getElementById('cardInvestimentos').textContent = formatarMoeda(investimentos);
-  document.getElementById('cardLucro').textContent = formatarMoeda(lucro);
+  document.getElementById('cardLucro').textContent = formatarMoeda(receitas - despesas - investimentos);
 }
 
 function atualizarGraficos() {
-  // Gráfico de barras anual
-  const dadosMeses = [];
-  for(let m = 0; m < 12; m++) {
-    const lancsMes = lancamentos.filter(l => {
-      const d = new Date(l.criadoEm || l.data);
-      return d.getMonth() === m && d.getFullYear() === anoAtual && !l.retirado;
+  // Gráfico de Barras
+  const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const receitas = meses.map((_, i) => {
+    const lancamentosMes = lancamentos.filter(l => {
+      const data = new Date(l.criadoEm);
+      return data.getMonth() === i && data.getFullYear() === anoAtual && l.tipo === 'receita';
     });
-    const receitas = lancsMes.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
-    const despesas = lancsMes.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
-    dadosMeses.push({receitas, despesas});
-  }
+    return lancamentosMes.reduce((s, l) => s + l.valor, 0);
+  });
   
   const ctxBarras = document.getElementById('chartBarras').getContext('2d');
-  if(charts.barras) charts.barras.destroy();
-  charts.barras = new Chart(ctxBarras, {
+  if (chartBarras) chartBarras.destroy();
+  chartBarras = new Chart(ctxBarras, {
     type: 'bar',
     data: {
-      labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
-      datasets: [
-        {label: 'Receitas', data: dadosMeses.map(d => d.receitas), backgroundColor: 'rgba(0,212,170,0.8)'},
-        {label: 'Despesas', data: dadosMeses.map(d => d.despesas), backgroundColor: 'rgba(255,77,106,0.8)'}
-      ]
+      labels: meses,
+      datasets: [{
+        label: 'Receitas',
+        data: receitas,
+        backgroundColor: 'rgba(0, 212, 170, 0.8)',
+        borderRadius: 4,
+        borderSkipped: false
+      }]
     },
-    options: {responsive: true, maintainAspectRatio: true, plugins: {legend: {display: true, labels: {color: '#E4EAF0'}}}, scales: {y: {ticks: {color: '#6B8098'}, grid: {color: 'rgba(255,255,255,0.06)'}}, x: {ticks: {color: '#6B8098'}, grid: {display: false}}}}
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#6B8098' }, grid: { color: 'rgba(255,255,255,0.06)' } },
+        x: { ticks: { color: '#6B8098' }, grid: { display: false } }
+      }
+    }
   });
   
-  // Gráfico donut despesas
-  const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.criadoEm || l.data);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && l.tipo === 'despesa' && !l.retirado;
+  // Gráfico Donut
+  const lancamentosMes = lancamentos.filter(l => {
+    const data = new Date(l.criadoEm);
+    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && l.tipo === 'despesa';
   });
   
-  const despesasPorCat = {};
-  lancsMes.forEach(l => {
-    despesasPorCat[l.categoria] = (despesasPorCat[l.categoria] || 0) + l.valor;
+  const categorias = {};
+  lancamentosMes.forEach(l => {
+    categorias[l.categoria] = (categorias[l.categoria] || 0) + l.valor;
   });
   
   const ctxDonut = document.getElementById('chartDonut').getContext('2d');
-  if(charts.donut) charts.donut.destroy();
-  charts.donut = new Chart(ctxDonut, {
+  if (chartDonut) chartDonut.destroy();
+  chartDonut = new Chart(ctxDonut, {
     type: 'doughnut',
     data: {
-      labels: Object.keys(despesasPorCat),
+      labels: Object.keys(categorias),
       datasets: [{
-        data: Object.values(despesasPorCat),
-        backgroundColor: ['rgba(0,212,170,0.8)', 'rgba(255,77,106,0.8)', 'rgba(167,139,250,0.8)', 'rgba(255,180,0,0.8)', 'rgba(100,200,255,0.8)']
+        data: Object.values(categorias),
+        backgroundColor: ['#00D4AA', '#FF4D6A', '#A78BFA', '#FFB400', '#FF6B9D'],
+        borderColor: '#0D1118',
+        borderWidth: 2
       }]
     },
-    options: {responsive: true, maintainAspectRatio: true, plugins: {legend: {display: true, labels: {color: '#E4EAF0'}}}}
+    options: { responsive: true, plugins: { legend: { labels: { color: '#E4EAF0' } } } }
   });
 }
 
 function atualizarExtrato() {
-  const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.criadoEm || l.data);
-    const matchMes = d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-    const matchTipo = filtroTipo === 'todos' || l.tipo === filtroTipo;
-    const search = document.getElementById('searchBox').value.toLowerCase();
-    const matchSearch = l.descricao.toLowerCase().includes(search) || l.categoria.toLowerCase().includes(search);
-    return matchMes && matchTipo && matchSearch;
+  const lancamentosMes = lancamentos.filter(l => {
+    const data = new Date(l.criadoEm);
+    return data.getMonth() === mesAtual && data.getFullYear() === anoAtual && !l.retirado;
   });
   
-  const html = lancsMes.map(l => `
-    <div class="lancamento-item" style="${l.retirado ? 'opacity:0.5' : ''}">
+  let filtrados = lancamentosMes;
+  if (filtroAtivo !== 'todos') {
+    filtrados = lancamentosMes.filter(l => l.tipo === filtroAtivo);
+  }
+  
+  const busca = document.getElementById('searchBox').value.toLowerCase();
+  if (busca) {
+    filtrados = filtrados.filter(l => l.descricao.toLowerCase().includes(busca));
+  }
+  
+  const html = filtrados.map(l => `
+    <div class="lancamento-item">
       <div class="lancamento-info">
-        <div class="lancamento-desc">${l.descricao}</div>
-        <div class="lancamento-cat">${l.categoria} • ${l.socio || socios[l.socioIdx]}</div>
+        <div class="lancamento-nome">${l.descricao}</div>
+        <div class="lancamento-meta">${socios[l.socioIdx]} • ${l.categoria}</div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${formatarMoeda(l.valor)}</div>
-        <button class="btn-action" onclick="retirarLancamento(${l.id})">${l.retirado ? '↩️' : '✓'}</button>
-        <button class="btn-action" onclick="excluirLancamento(${l.id})">🗑️</button>
+      <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${formatarMoeda(l.valor)}</div>
+      <div class="lancamento-actions">
+        <button onclick="retirarLancamento('${l.id}')">✓</button>
+        <button onclick="excluirLancamento('${l.id}')">🗑️</button>
       </div>
     </div>
   `).join('');
   
-  document.getElementById('listaLancamentos').innerHTML = html || '<div style="color:var(--muted);font-size:13px">Nenhum lançamento</div>';
+  document.getElementById('extratoLista').innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:20px">Nenhum lançamento</div>';
 }
 
-function atualizarSociosUI() {
-  const lancsMes = lancamentos.filter(l => {
-    const d = new Date(l.criadoEm || l.data);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual && !l.retirado;
-  });
-  
-  const saldoSocios = socios.map((nome, idx) => {
-    const lancsSocio = lancsMes.filter(l => l.socioIdx === idx);
-    const receitas = lancsSocio.filter(l => l.tipo === 'receita').reduce((a, l) => a + l.valor, 0);
-    const despesas = lancsSocio.filter(l => l.tipo === 'despesa').reduce((a, l) => a + l.valor, 0);
-    const investimentos = lancsSocio.filter(l => l.tipo === 'investimento').reduce((a, l) => a + l.valor, 0);
+function atualizarSocios() {
+  const sociosData = socios.map((nome, idx) => {
+    const lancamentosSocio = lancamentos.filter(l => l.socioIdx === idx && !l.retirado);
+    const receitas = lancamentosSocio.filter(l => l.tipo === 'receita').reduce((s, l) => s + l.valor, 0);
+    const despesas = lancamentosSocio.filter(l => l.tipo === 'despesa').reduce((s, l) => s + l.valor, 0);
+    const investimentos = lancamentosSocio.filter(l => l.tipo === 'investimento').reduce((s, l) => s + l.valor, 0);
     const saldo = receitas - despesas - investimentos;
-    return {nome, saldo};
+    return { nome, saldo };
   });
   
-  const maxAbsSaldo = Math.max(...saldoSocios.map(s => Math.abs(s.saldo)), 1);
+  const html = sociosData.map(s => `
+    <div class="socio-item">
+      <div class="socio-nome">${s.nome}</div>
+      <div class="socio-valor ${s.saldo >= 0 ? 'positivo' : 'negativo'}">${formatarMoeda(s.saldo)}</div>
+    </div>
+  `).join('');
   
-  const html = saldoSocios.map(s => {
-    const percentual = Math.abs(s.saldo) / maxAbsSaldo * 100;
-    const isNegativo = s.saldo < 0;
-    return `
-      <div class="socio-card">
-        <div class="socio-header">
-          <div class="socio-nome">${s.nome}</div>
-          <div class="socio-valor ${isNegativo ? 'negativo' : 'positivo'}">${s.saldo < 0 ? '-' : '+'}${formatarMoeda(Math.abs(s.saldo))}</div>
-        </div>
-        <div class="socio-bar">
-          <div class="socio-bar-fill ${isNegativo ? 'negativo' : ''}" style="width:${percentual}%"></div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  document.getElementById('sociosList').innerHTML = html;
+}
+
+function atualizarCategorias() {
+  const tipo = document.getElementById('inputTipo').value;
+  const categorias = {
+    receita: ['Venda de Produto/Serviço', 'Consultoria', 'Outro'],
+    despesa: ['Fornecedores', 'Salários', 'Aluguel', 'Utilidades', 'Outro'],
+    investimento: ['Equipamentos', 'Tecnologia', 'Treinamento', 'Outro']
+  };
   
-  document.getElementById('listaSocios').innerHTML = html;
-}
-
-function salvarSocios() {
-  socios = [
-    document.getElementById('socio1').value || 'Sócio 1',
-    document.getElementById('socio2').value || 'Sócio 2',
-    document.getElementById('socio3').value || 'Sócio 3',
-    document.getElementById('socio4').value || 'Sócio 4'
-  ];
-  salvarDados();
-  atualizarUI();
-  alert('Nomes salvos!');
-}
-
-function carregarSociosDrawer() {
-  document.getElementById('socio1').value = socios[0];
-  document.getElementById('socio2').value = socios[1];
-  document.getElementById('socio3').value = socios[2];
-  document.getElementById('socio4').value = socios[3];
-}
-
-function exportarDados() {
-  const dados = {lancamentos, socios, exportadoEm: new Date().toISOString()};
-  const csv = 'data:text/csv;charset=utf-8,\uFEFF' + 
-    'Data,Tipo,Categoria,Descrição,Valor,Sócio\n' +
-    lancamentos.map(l => {
-      const d = new Date(l.criadoEm || l.data);
-      return `${d.toLocaleDateString('pt-BR')},${l.tipo},${l.categoria},"${l.descricao}",${l.valor},${l.socio || socios[l.socioIdx]}`;
-    }).join('\n');
-  
-  const link = document.createElement('a');
-  link.href = csv;
-  link.download = `financeiro_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
-}
-
-function importarDados() {
-  document.getElementById('fileImport').click();
-}
-
-function confirmarApagar() {
-  if(confirm('Tem certeza? Isto não pode ser desfeito!')) {
-    if(confirm('CONFIRMAR: Apagar TODOS os dados?')) {
-      lancamentos = [];
-      salvarDados();
-      atualizarUI();
-      alert('Todos os dados foram apagados');
-    }
-  }
+  const select = document.getElementById('inputCategoria');
+  select.innerHTML = categorias[tipo].map(c => `<option>${c}</option>`).join('');
 }
 
 function formatarMoeda(valor) {
-  return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(valor);
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(valor);
 }
 
-// Salvamento local confiável - sem dependências externas
-
-function salvarDados() {
-  localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
-  localStorage.setItem('financeiro_socios', JSON.stringify(socios));
-  console.log('✅ Dados salvos localmente');
+function formatarValor(str) {
+  const num = parseFloat(str.replace(/[^\d.]/g, '')) || 0;
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 }
 
-function carregarDados() {
-  const lacs = localStorage.getItem('financeiro_lancamentos');
-  const socs = localStorage.getItem('financeiro_socios');
-  
-  // Se localStorage estiver vazio, mantém os dados migrados (já definidos no início)
-  // Se localStorage tiver dados, carrega deles (para não perder dados locais do usuário)
-  if(lacs && lacs !== '[]') lancamentos = JSON.parse(lacs);
-  if(socs && socs !== '["Sócio 1","Sócio 2","Sócio 3","Sócio 4"]') socios = JSON.parse(socs);
-  
-  // Se localStorage está vazio, salva os dados migrados para persistência
-  if(!lacs || lacs === '[]') {
-    localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
+function mostrarToast(msg, tipo) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${tipo}`;
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// ===== EVENTOS =====
+document.getElementById('btnMesAnterior').addEventListener('click', () => {
+  mesAtual = (mesAtual - 1 + 12) % 12;
+  if (mesAtual === 11) anoAtual--;
+  atualizarLabelMes();
+  atualizarUI();
+});
+
+document.getElementById('btnMesProximo').addEventListener('click', () => {
+  mesAtual = (mesAtual + 1) % 12;
+  if (mesAtual === 0) anoAtual++;
+  atualizarLabelMes();
+  atualizarUI();
+});
+
+function atualizarLabelMes() {
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  document.getElementById('labelMes').textContent = `${meses[mesAtual]} ${anoAtual}`;
+}
+
+document.getElementById('btnNovoLancamento').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.add('active');
+});
+
+document.getElementById('btnCloseModal').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('active');
+});
+
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === document.getElementById('modalOverlay')) {
+    document.getElementById('modalOverlay').classList.remove('active');
   }
-  if(!socs || socs === '["Sócio 1","Sócio 2","Sócio 3","Sócio 4"]') {
-    localStorage.setItem('financeiro_socios', JSON.stringify(socios));
+});
+
+document.getElementById('inputTipo').addEventListener('change', atualizarCategorias);
+
+document.getElementById('btnSalvar').addEventListener('click', async () => {
+  const tipo = document.getElementById('inputTipo').value;
+  const categoria = document.getElementById('inputCategoria').value;
+  const descricao = document.getElementById('inputDescricao').value;
+  const valor = parseFloat(document.getElementById('inputValor').value.replace(/[^\d.]/g, '')) || 0;
+  const socioIdx = parseInt(document.getElementById('inputSocio').value);
+  
+  if (!descricao || valor <= 0) {
+    mostrarToast('Preencha todos os campos corretamente', 'error');
+    return;
+  }
+  
+  lancamentos.push({
+    id: Date.now().toString(),
+    tipo, categoria, descricao, valor, socioIdx,
+    criadoEm: new Date().toISOString(),
+    retirado: false
+  });
+  
+  salvarNoLocal();
+  await salvarNoGitHub();
+  
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.getElementById('inputDescricao').value = '';
+  document.getElementById('inputValor').value = '';
+  atualizarUI();
+});
+
+document.getElementById('btnCancelar').addEventListener('click', () => {
+  document.getElementById('modalOverlay').classList.remove('active');
+});
+
+document.getElementById('inputValor').addEventListener('input', (e) => {
+  e.target.value = formatarValor(e.target.value);
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroAtivo = btn.dataset.filter;
+    atualizarExtrato();
+  });
+});
+
+document.getElementById('searchBox').addEventListener('input', atualizarExtrato);
+
+document.getElementById('btnConfig').addEventListener('click', () => {
+  document.getElementById('drawerOverlay').classList.add('active');
+  document.getElementById('drawerContent').style.display = 'block';
+});
+
+document.getElementById('btnCloseDrawer').addEventListener('click', () => {
+  document.getElementById('drawerOverlay').classList.remove('active');
+  document.getElementById('drawerContent').style.display = 'none';
+});
+
+document.getElementById('drawerOverlay').addEventListener('click', () => {
+  document.getElementById('drawerOverlay').classList.remove('active');
+  document.getElementById('drawerContent').style.display = 'none';
+});
+
+['inputSocio0', 'inputSocio1', 'inputSocio2', 'inputSocio3'].forEach((id, idx) => {
+  const input = document.getElementById(id);
+  input.value = socios[idx];
+  input.addEventListener('change', async () => {
+    socios[idx] = input.value;
+    salvarNoLocal();
+    await salvarNoGitHub();
+    atualizarUI();
+  });
+});
+
+document.getElementById('btnExportar').addEventListener('click', () => {
+  const csv = 'Descrição,Tipo,Categoria,Valor,Sócio,Data\n' +
+    lancamentos.map(l => `"${l.descricao}","${l.tipo}","${l.categoria}",${l.valor},"${socios[l.socioIdx]}","${new Date(l.criadoEm).toLocaleDateString('pt-BR')}"`).join('\n');
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'lancamentos.csv';
+  link.click();
+  mostrarToast('Arquivo exportado!', 'success');
+});
+
+document.getElementById('btnImportar').addEventListener('click', () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = JSON.parse(event.target.result);
+        lancamentos = data.lancamentos || [];
+        socios = data.socios || socios;
+        salvarNoLocal();
+        await salvarNoGitHub();
+        atualizarUI();
+        mostrarToast('Dados importados!', 'success');
+      } catch (err) {
+        mostrarToast('Erro ao importar', 'error');
+      }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+});
+
+document.getElementById('btnLimpar').addEventListener('click', () => {
+  if (confirm('Tem certeza? Isso vai apagar TODOS os dados!')) {
+    lancamentos = [];
+    salvarNoLocal();
+    salvarNoGitHub();
+    atualizarUI();
+    mostrarToast('Todos os dados foram apagados', 'success');
+  }
+});
+
+function retirarLancamento(id) {
+  const l = lancamentos.find(x => x.id === id);
+  if (l) {
+    l.retirado = !l.retirado;
+    salvarNoLocal();
+    salvarNoGitHub();
+    atualizarUI();
   }
 }
+
+function excluirLancamento(id) {
+  if (confirm('Excluir este lançamento?')) {
+    lancamentos = lancamentos.filter(l => l.id !== id);
+    salvarNoLocal();
+    salvarNoGitHub();
+    atualizarUI();
+  }
+}
+
+// ===== INICIALIZAÇÃO =====
+document.addEventListener('DOMContentLoaded', async () => {
+  atualizarLabelMes();
+  await carregarDoGitHub();
+  
+  // Sincronizar a cada 30 segundos
+  setInterval(carregarDoGitHub, 30000);
+});
 </script>
 
 </body>
