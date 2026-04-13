@@ -38,9 +38,7 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min
   padding:14px 20px;
   display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
 }
-#statusSincronizacao{
-  font-size:12px;font-weight:600;letter-spacing:0.5px;min-height:16px;transition:all 0.3s;
-}
+
 .btn-mes{
   background:transparent;border:none;color:var(--muted);font-size:18px;
   cursor:pointer;padding:4px 8px;transition:color 0.2s;line-height:1;
@@ -212,7 +210,6 @@ canvas{max-width:100%;height:auto}
     <button class="btn-mes" id="btnMesProximo">→</button>
     <button class="btn-primary" id="btnNovoLancamento">+ Lançamento</button>
     <button class="btn-config" id="btnConfig">⚙️</button>
-    <span id="statusSincronizacao"></span>
   </div>
 
 <div class="grid-cards">
@@ -368,21 +365,8 @@ const categorias = {
 // INICIALIZAR
 document.addEventListener('DOMContentLoaded', () => {
   carregarDados();
-  sincronizarComGitHub(); // Sincronizar com GitHub ao carregar
   atualizarUI();
   setupEventListeners();
-  // Sincronizar a cada 5 segundos para detectar mudanças de outras pessoas
-  setInterval(sincronizarComGitHub, 5000);
-  
-  // Se não tiver token, pedir ao usuário
-  if(!GITHUB_TOKEN) {
-    const token = prompt('Cole o token do GitHub para habilitar sincronização automática:\n(Você só precisa fazer isso uma vez)');
-    if(token) {
-      GITHUB_TOKEN = token;
-      localStorage.setItem('github_token', token);
-      salvarNoGitHub();
-    }
-  }
 });
 
 function setupEventListeners() {
@@ -718,129 +702,12 @@ function formatarMoeda(valor) {
   return new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(valor);
 }
 
-const GITHUB_REPO = 'devbsss/sistema-financeiro-permanente';
-const GITHUB_FILE = 'data.json';
-const GITHUB_RAW_URL = `https://raw.githubusercontent.com/${GITHUB_REPO}/master/${GITHUB_FILE}`;
-const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE}`;
-
-// Token armazenado de forma segura (não hardcoded)
-let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
-let statusSincronizacao = 'pronto'; // pronto, salvando, erro, sincronizado
-
-async function sincronizarComGitHub() {
-  try {
-    const response = await fetch(GITHUB_RAW_URL);
-    if(response.ok) {
-      const dados = await response.json();
-      const versaoLocal = JSON.stringify({lancamentos, socios});
-      const versaoRemota = JSON.stringify(dados);
-      if(versaoLocal !== versaoRemota) {
-        lancamentos = dados.lancamentos || lancamentos;
-        socios = dados.socios || socios;
-        localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
-        localStorage.setItem('financeiro_socios', JSON.stringify(socios));
-        atualizarUI();
-      }
-    }
-  } catch(err) {
-    console.log('Sincronização com GitHub: usando dados locais');
-  }
-}
-
-async function salvarNoGitHub(tentativa = 1) {
-  if(!GITHUB_TOKEN) {
-    console.log('Token não configurado - dados salvos localmente apenas');
-    return false;
-  }
-  
-  statusSincronizacao = 'salvando';
-  atualizarStatusSincronizacao();
-  
-  try {
-    // Buscar o SHA do arquivo atual (necessário para atualizar)
-    const getResponse = await fetch(GITHUB_API_URL, {
-      headers: {'Authorization': `token ${GITHUB_TOKEN}`},
-      method: 'GET'
-    });
-    
-    if(!getResponse.ok) {
-      throw new Error(`Erro ao buscar arquivo: ${getResponse.status} ${getResponse.statusText}`);
-    }
-    
-    const fileData = await getResponse.json();
-    const sha = fileData.sha;
-    
-    // Preparar os dados
-    const dados = {
-      lancamentos,
-      socios,
-      ultimaAtualizacao: new Date().toISOString()
-    };
-    
-    // Codificar em base64
-    const content = btoa(JSON.stringify(dados, null, 2));
-    
-    // Enviar para o GitHub
-    const updateResponse = await fetch(GITHUB_API_URL, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/vnd.github.v3+json'
-      },
-      body: JSON.stringify({
-        message: `Atualização automática - ${new Date().toLocaleString('pt-BR')}`,
-        content: content,
-        sha: sha
-      })
-    });
-    
-    if(updateResponse.ok) {
-      console.log('✅ Dados salvos no GitHub com sucesso!');
-      statusSincronizacao = 'sincronizado';
-      atualizarStatusSincronizacao();
-      setTimeout(() => { statusSincronizacao = 'pronto'; atualizarStatusSincronizacao(); }, 2000);
-      return true;
-    } else {
-      const erro = await updateResponse.json();
-      throw new Error(`Erro na atualização: ${erro.message || updateResponse.statusText}`);
-    }
-  } catch(err) {
-    console.error('❌ Erro ao salvar no GitHub:', err.message);
-    statusSincronizacao = 'erro';
-    atualizarStatusSincronizacao();
-    
-    // Retry automático (máximo 3 tentativas)
-    if(tentativa < 3) {
-      console.log(`Tentando novamente em 2 segundos (tentativa ${tentativa + 1}/3)...`);
-      setTimeout(() => salvarNoGitHub(tentativa + 1), 2000);
-    }
-    return false;
-  }
-}
-
-function atualizarStatusSincronizacao() {
-  const statusEl = document.getElementById('statusSincronizacao');
-  if(!statusEl) return;
-  
-  if(statusSincronizacao === 'salvando') {
-    statusEl.textContent = '💾 Salvando...';
-    statusEl.style.color = 'var(--yellow)';
-  } else if(statusSincronizacao === 'sincronizado') {
-    statusEl.textContent = '✅ Sincronizado';
-    statusEl.style.color = 'var(--green)';
-  } else if(statusSincronizacao === 'erro') {
-    statusEl.textContent = '⚠️ Erro';
-    statusEl.style.color = 'var(--red)';
-  } else {
-    statusEl.textContent = '';
-  }
-}
+// Salvamento local confiável - sem dependências externas
 
 function salvarDados() {
   localStorage.setItem('financeiro_lancamentos', JSON.stringify(lancamentos));
   localStorage.setItem('financeiro_socios', JSON.stringify(socios));
-  salvarNoGitHub(); // Sincronizar com GitHub
+  console.log('✅ Dados salvos localmente');
 }
 
 function carregarDados() {
