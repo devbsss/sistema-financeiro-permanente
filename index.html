@@ -465,7 +465,7 @@ function atualizarExtrato() {
     <div class="lancamento-item">
       <div class="lancamento-info">
         <div class="lancamento-nome">${l.descricao}</div>
-        <div class="lancamento-meta">${socios[l.socioIdx] || 'Sócio'} • ${l.categoria}</div>
+        <div class="lancamento-meta">${l.socio || socios[l.socioIdx] || 'Sócio'} • ${l.categoria}</div>
       </div>
       <div class="lancamento-valor ${l.tipo}">${l.tipo === 'receita' ? '+' : '-'}${fmt(l.valor)}</div>
       <div class="lancamento-actions">
